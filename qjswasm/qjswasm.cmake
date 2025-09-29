@@ -29,7 +29,7 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "WASI")
     list(APPEND qjs_libs ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
-add_executable(qjsextra
+add_executable(qjswasm
     # gen/repl.c
     # gen/standalone.c
     ../eval.c
@@ -38,14 +38,14 @@ add_executable(qjsextra
     ../qjs.c
 )
 
-add_qjs_libc_if_needed(qjsextra)
-add_static_if_needed(qjsextra)
+add_qjs_libc_if_needed(qjswasm)
+add_static_if_needed(qjswasm)
 
-set_target_properties(qjsextra PROPERTIES
-    OUTPUT_NAME "qjsextra"
+set_target_properties(qjswasm PROPERTIES
+    OUTPUT_NAME "qjswasm"
 )
 
-target_link_options(qjsextra PRIVATE 
+target_link_options(qjswasm PRIVATE 
     "LINKER:--export=js_std_await"
     "LINKER:--export=New_QJS"
     "LINKER:--export=New_QJSContext"
@@ -150,22 +150,22 @@ target_link_options(qjsextra PRIVATE
     "LINKER:--export=initialize"
 )
 
-target_compile_options(qjsextra PRIVATE "-fvisibility=default")
+target_compile_options(qjswasm PRIVATE "-fvisibility=default")
 
-target_compile_definitions(qjsextra PRIVATE ${qjs_defines})
+target_compile_definitions(qjswasm PRIVATE ${qjs_defines})
 
-target_link_libraries(qjsextra qjs)
+target_link_libraries(qjswasm qjs)
 
 if(NOT WIN32)
-    set_target_properties(qjsextra PROPERTIES ENABLE_EXPORTS TRUE)
+    set_target_properties(qjswasm PROPERTIES ENABLE_EXPORTS TRUE)
 endif()
 
 if(QJS_BUILD_CLI_WITH_MIMALLOC OR QJS_BUILD_CLI_WITH_STATIC_MIMALLOC)
     find_package(mimalloc REQUIRED)
     if(QJS_BUILD_CLI_WITH_STATIC_MIMALLOC)
-        target_link_libraries(qjsextra mimalloc-static)
+        target_link_libraries(qjswasm mimalloc-static)
     else()
-        target_link_libraries(qjsextra mimalloc)
+        target_link_libraries(qjswasm mimalloc)
     endif()
 endif()
 

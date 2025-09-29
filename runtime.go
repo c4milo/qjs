@@ -13,7 +13,7 @@ import (
 	wsp1 "github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 )
 
-//go:embed qjsextra.wasm
+//go:embed qjs.wasm
 var wasmBytes []byte
 
 var (
