@@ -16,6 +16,8 @@
   <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">
     <img src="https://img.shields.io/badge/license-MIT-brightgreen.svg" alt="MIT license" />
   </a>
+</p>
+<p align="center">
 	<a href="https://app.fossa.com/projects/git%2Bgithub.com%2Ffastschema%2Fqjs?ref=badge_shield&issueType=license" alt="FOSSA Status">
 		<img src="https://app.fossa.com/api/projects/git%2Bgithub.com%2Ffastschema%2Fqjs.svg?type=shield&issueType=license"/>
 	</a>
@@ -24,50 +26,108 @@
 	</a>
 </p>
 
-QJS is a CGO-Free, modern, secure JavaScript runtime for Go applications, built on the powerful QuickJS engine and Wazero WebAssembly runtime. It allows you to run JavaScript code safely and efficiently, with full support for ES6+ features, async/await, and Go-JS interoperability.
+QJS is a CGO-Free, modern, secure JavaScript runtime for Go applications, built on the powerful QuickJS engine and Wazero WebAssembly runtime.
+
+QJS allows you to run JavaScript code safely and efficiently, with full support for ES2023 features, async/await, and Go-JS interoperability.
 
 ## Features
 
-- **JavaScript ES6+ Support**: Full ECMAScript 2020 compatibility via QuickJS
-- **WebAssembly Execution**: Secure, sandboxed runtime using Wazero
-- **Go-JS Interoperability**: Seamless data conversion between Go and JavaScript
-- **ProxyValue Support**: Zero-copy sharing of Go values with JavaScript via lightweight proxies
-- **Function Binding**: Expose Go functions to JavaScript and vice versa
-- **Module System**: Support for ES6 modules and CommonJS
-- **Async/Await**: Full support for asynchronous JavaScript execution
-- **Runtime Pooling**: Reuse JavaScript runtimes for better performance
-- **Memory Safety**: Memory-safe execution environment with configurable limits
-- **No CGO Dependencies**: Pure Go implementation with WebAssembly
+- **JavaScript ES6+ Support**: Full ES2023 compatibility via QuickJS (NG fork).
+- **WebAssembly Execution**: Secure, sandboxed runtime using Wazero.
+- **Go-JS Interoperability**: Seamless data conversion between Go and JavaScript.
+- **ProxyValue Support**: Zero-copy sharing of Go values with JavaScript via lightweight proxies.
+- **Function Binding**: Expose Go functions to JavaScript and vice versa.
+- **Async/Await**: Full support for asynchronous JavaScript execution.
+- **Memory Safety**: Memory-safe execution environment with configurable limits.
+- **No CGO Dependencies**: Pure Go implementation with WebAssembly.
+
+## Benchmarks
+
+### Factorial Calculation
+
+Computing factorial(10) 1,000,000 times
+
+| Ite | Engine | Duration      | Memory        | Allocations | Frees | Heap Alloc | Heap Objects |
+|-----|--------|---------------|---------------|-------------|-------|------------|--------------|
+| 1   | Goja   | 1.036s        | 91.6 MB       | 7.0M        | 7.0M  | 575.4 KB   | 24.3K        |
+|     | QJS    | **695.809ms** | **992.3 KB**  | **1.5K**    | 34    | 992.3 KB   | 1.4K         |
+|     |        |               |               |             |       |            |              |
+| 2   | Goja   | 1.052s        | 91.6 MB       | 7.0M        | 6.9M  | 2.4 MB     | 105.8K       |
+|     | QJS    | **701.243ms** | **992.3 KB**  | **1.5K**    | 34    | 992.3 KB   | 1.4K         |
+|     |        |               |               |             |       |            |              |
+| 3   | Goja   | 1.061s        | 91.6 MB       | 7.0M        | 6.9M  | 2.4 MB     | 103.3K       |
+|     | QJS    | **696.371ms** | **993.1 KB**  | **1.5K**    | 34    | 993.1 KB   | 1.4K         |
+|     |        |               |               |             |       |            |              |
+| 4   | Goja   | 1.061s        | 91.6 MB       | 7.0M        | 7.0M  | 1.1 MB     | 48.5K        |
+|     | QJS    | **699.354ms** | **1001.6 KB** | **1.5K**    | 34    | 1001.6 KB  | 1.4K         |
+|     |        |               |               |             |       |            |              |
+| 5   | Goja   | 1.060s        | 91.6 MB       | 7.0M        | 7.0M  | 1.1 MB     | 47.2K        |
+|     | QJS    | **702.952ms** | **992.3 KB**  | **1.5K**    | 34    | 992.3 KB   | 1.4K         |
+|-----|--------|---------------|---------------|-------------|-------|------------|--------------|
+| Avg | Goja   | 1.054s        | 91.6 MB       | 7.0M        | 6.9M  | 1.5 MB     | 65.8K        |
+|     | QJS    | **699.146ms** | **994.3 KB**  | **1.5K**    | 34    | 994.3 KB   | 1.4K         |
+
+**Performance Comparison**
+- **Time**: QJS is **1.51x faster** than Goja.
+- **Memory**: QJS uses **94.30x less** memory than Goja.
+
+**Total Execution Times**
+- **Goja**: 5.271594245s (mem: 457.8 MB).
+- **QJS**: 3.495730965s (mem: 4.9 MB).
+
+**About QJS WebAssembly**
+- QJS runs via WASM (Wazero runtime).
+- Allocations/Frees/Objects metrics show Go-level only because WASM-internal allocations are not visible to Go runtime.
+- Memory usage is accurate for both engines.
+
+### AreWeFastYet V8-V7
+| Metric        | qjs     		| goja    	|
+|---------------|-------------|-----------|
+| Version       | latest  		| latest  	|
+| Exe size      | **8.5 MB** 	| 13.2 MB		|
+| Richards      | **431** 		| 365     	|
+| DeltaBlue     | **445** 		| 385     	|
+| Crypto        | **383** 		| 187     	|
+| RayTrace      | **503** 		| 335     	|
+| EarleyBoyer   | **816** 		| 694     	|
+| RegExp        | 135     		| **306** 	|
+| Splay         | **1190**		| 786     	|
+| NavierStokes  | **639** 		| 292     	|
+| Score         | **486** 		| 379     	|
+| Score/MB      | **57**  		| 28      	|
+| Time(s)       | **73**  		| 84      	|
+
+*Benchmarks run on AMD Ryzen 7 7840HS, 32GB RAM, Linux*
 
 ## Example Usage
-
 
 ### Basic Execution
 
 ```go
 rt, err := qjs.New()
 if err != nil {
-    panic(err)
+	log.Fatal(err)
 }
 
 defer rt.Close()
 ctx := rt.Context()
 
 result, err := ctx.Eval("test.js", qjs.Code(`
-    const person = {
-        name: "Alice",
-        age: 30,
-        city: "New York"
-    };
+	const person = {
+		name: "Alice",
+		age: 30,
+		city: "New York"
+	};
 
-    const info = Object.keys(person).map(key =>
-        key + ": " + person[key]
-    ).join(", ");
+	const info = Object.keys(person).map(key =>
+		key + ": " + person[key]
+	).join(", ");
 
-    ({ person: person, info: info });
+	// The last expression is the return value
+	({ person: person, info: info });
 `))
 if err != nil {
-    log.Fatal("Eval error:", err)
+	log.Fatal("Eval error:", err)
 }
 defer result.Free()
 // Output: name: Alice, age: 30, city: New York
@@ -86,16 +146,91 @@ ctx.SetFunc("goFunction", func(this *qjs.This) (*qjs.Value, error) {
 })
 
 result, err := ctx.Eval("test.js", qjs.Code(`
-    const message = goFunction();
-    message;
+	const message = goFunction();
+	message;
 `))
 if err != nil {
-    panic(err)
+	log.Fatal("Eval error:", err)
 }
 defer result.Free()
 
 // Output: Hello from Go!
 log.Println(result.String())
+```
+
+### HTTP Handlers in JavaScript
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+
+	"github.com/fastschema/qjs"
+)
+
+func must[T any](val T, err error) T {
+	if err != nil {
+		log.Fatalf("Error: %v", err)
+	}
+	return val
+}
+
+const script = `
+// JS handlers for HTTP routes
+const about = () => {
+	return "QuickJS in Go - Hello World!";
+};
+
+const contact = () => {
+	return "Contact us at contact@example.com";
+};
+
+export default { about, contact };
+`
+
+func main() {
+	rt := must(qjs.New())
+	defer rt.Close()
+	ctx := rt.Context()
+
+	// Precompile the script to bytecode
+	byteCode := must(ctx.Compile("script.js", qjs.Code(script), qjs.TypeModule()))
+	// Use a pool of runtimes for concurrent requests
+	pool := qjs.NewPool(3, &qjs.Option{}, func(r *qjs.Runtime) error {
+		results := must(r.Context().Eval("script.js", qjs.Bytecode(byteCode), qjs.TypeModule()))
+		// Store the exported functions in the global object for easy access
+		r.Context().Global().SetPropertyStr("handlers", results)
+		return nil
+	})
+
+	// Register HTTP handlers based on JS functions
+	val := must(ctx.Eval("script.js", qjs.Bytecode(byteCode), qjs.TypeModule()))
+	methodNames := must(val.GetOwnPropertyNames())
+	val.Free()
+	for _, methodName := range methodNames {
+		http.HandleFunc("/"+methodName, func(w http.ResponseWriter, r *http.Request) {
+			runtime := must(pool.Get())
+			defer pool.Put(runtime)
+
+			// Call the corresponding JS function
+			handlers := runtime.Context().Global().GetPropertyStr("handlers")
+			result := must(handlers.InvokeJS(methodName))
+			fmt.Fprint(w, result.String())
+			result.Free()
+		})
+	}
+
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Hello from Go's HTTP server!")
+	})
+
+	log.Println("Server listening on :8080")
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		log.Fatalf("Server error: %v\n", err)
+	}
+}
 ```
 
 ### Async operations
@@ -104,45 +239,52 @@ log.Println(result.String())
 
 ```go
 ctx.SetAsyncFunc("asyncFunction", func(this *qjs.This) {
-    go func() {
-        time.Sleep(100 * time.Millisecond)
-        result := this.Context().NewString("Async result from Go!")
-        this.Promise().Resolve(result)
-    }()
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		result := this.Context().NewString("Async result from Go!")
+		this.Promise().Resolve(result)
+	}()
 })
 
 result, err := ctx.Eval("test.js", qjs.Code(`
-    async function main() {
-        const result = await asyncFunction();
-        return result;
-    }
-    main()
+async function main() {
+	const result = await asyncFunction();
+	return result;
+}
+({ main: main() });
 `))
 
 if err != nil {
-    log.Fatal("Eval error:", err)
+	log.Fatal("Eval error:", err)
 }
 defer result.Free()
 
+mainFunc := result.GetPropertyStr("main")
+
 // Wait for the promise to resolve
-result.Await()
+val, err := mainFunc.Await()
+if err != nil {
+	log.Fatal("Await error:", err)
+}
+
 // Output: Async result from Go!
-log.Println(result.String())
+log.Println("Awaited value:", val.String())
 ```
 
 **Top level await**
 
 ```go
+// asyncFunction is already defined above
 result, err := ctx.Eval("test.js", qjs.Code(`
-    async function main() {
-        const result = await asyncFunction();
-        return result;
-    }
-    await main()
+	async function main() {
+		const result = await asyncFunction();
+		return result;
+	}
+	await main()
 `), qjs.FlagAsync())
 
 if err != nil {
-    log.Fatal("Eval error:", err)
+	log.Fatal("Eval error:", err)
 }
 
 defer result.Free()
@@ -154,22 +296,22 @@ log.Println(result.String())
 ```go
 // Call JS function from Go
 result, err := ctx.Eval("test.js", qjs.Code(`
-    function add(a, b) {
-        return a + b;
-    }
+	function add(a, b) {
+		return a + b;
+	}
 
-    function errorFunc() {
-        throw new Error("test error");
-    }
+	function errorFunc() {
+		throw new Error("test error");
+	}
 
-    ({
-        addFunc: add,
-        errorFunc: errorFunc
-    });
+	({
+		addFunc: add,
+		errorFunc: errorFunc
+	});
 `))
 
 if err != nil {
-    panic(err)
+	log.Fatal("Eval error:", err)
 }
 defer result.Free()
 
@@ -178,31 +320,31 @@ defer jsAddFunc.Free()
 
 goAddFunc, err := qjs.JsFuncToGo[func(int, int) (int, error)](jsAddFunc)
 if err != nil {
-    panic(err)
+	log.Fatal("Func conversion error:", err)
 }
 
 total, err := goAddFunc(1, 2)
 if err != nil {
-    panic(err)
+	log.Fatal("Func execution error:", err)
 }
 
 // Output: 3
-log.Println(total)
+log.Println("Addition result:", total)
 
 jsErrorFunc := result.GetPropertyStr("errorFunc")
 defer jsErrorFunc.Free()
 
 goErrorFunc, err := qjs.JsFuncToGo[func() (any, error)](jsErrorFunc)
 if err != nil {
-    panic(err)
+	log.Fatal("Func conversion error:", err)
 }
 
 _, err = goErrorFunc()
 if err != nil {
-    // Output:
-    // JS function execution failed: Error: test error
-    // 	at errorFunc (test.js:7:14)
-    log.Println(err.Error())
+	// Output:
+	// JS function execution failed: Error: test error
+  //  at errorFunc (test.js:7:13)
+	log.Println(err.Error())
 }
 ```
 
@@ -211,48 +353,48 @@ if err != nil {
 ```go
 // Load a utility module
 if _, err = ctx.Load("math-utils.js", qjs.Code(`
-    export function add(a, b) {
-        return a + b;
-    }
+	export function add(a, b) {
+		return a + b;
+	}
 
-    export function multiply(a, b) {
-        return a * b;
-    }
+	export function multiply(a, b) {
+		return a * b;
+	}
 
-    export function power(base, exponent) {
-        return Math.pow(base, exponent);
-    }
+	export function power(base, exponent) {
+		return Math.pow(base, exponent);
+	}
 
-    export const PI = 3.14159;
-    export const E = 2.71828;
-    export default {
-        add,
-        multiply,
-        power,
-        PI,
-        E
-    };
+	export const PI = 3.14159;
+	export const E = 2.71828;
+	export default {
+		add,
+		multiply,
+		power,
+		PI,
+		E
+	};
 `)); err != nil {
-    panic(err)
+	log.Fatal("Module load error:", err)
 }
 
 // Use the module
 result, err := ctx.Eval("use-math.js", qjs.Code(`
-    import mathUtils, { add, multiply, power, PI } from 'math-utils.js';
+	import mathUtils, { add, multiply, power, PI } from 'math-utils.js';
 
-    const calculations = {
-        addition: add(10, 20),
-        multiplication: multiply(6, 7),
-        power: power(2, 8),
-        circleArea: PI * power(5, 2),
-        defaultAdd: mathUtils.add(10, 20)
-    };
+	const calculations = {
+		addition: add(10, 20),
+		multiplication: multiply(6, 7),
+		power: power(2, 8),
+		circleArea: PI * power(5, 2),
+		defaultAdd: mathUtils.add(10, 20)
+	};
 
-    export default calculations;
+	export default calculations;
 `), qjs.TypeModule())
 
 if err != nil {
-    log.Fatal("Module eval error:", err)
+	log.Fatal("Module eval error:", err)
 }
 
 // Output:
@@ -273,28 +415,28 @@ result.Free()
 
 ```go
 script := `
-    function fibonacci(n) {
-        if (n <= 1) return n;
-        return fibonacci(n - 1) + fibonacci(n - 2);
-    }
+	function fibonacci(n) {
+		if (n <= 1) return n;
+		return fibonacci(n - 1) + fibonacci(n - 2);
+	}
 
-    function factorial(n) {
-        return n <= 1 ? 1 : n * factorial(n - 1);
-    }
+	function factorial(n) {
+		return n <= 1 ? 1 : n * factorial(n - 1);
+	}
 
-    const result = {
-        fib10: fibonacci(10),
-        fact5: factorial(5),
-        timestamp: Date.now()
-    };
+	const result = {
+		fib10: fibonacci(10),
+		fact5: factorial(5),
+		timestamp: Date.now()
+	};
 
-    result;
+	result;
 `
 
 // Compile the script to bytecode
 bytecode, err := ctx.Compile("math-functions.js", qjs.Code(script))
 if err != nil {
-    log.Fatal("Compilation error:", err)
+	log.Fatal("Compilation error:", err)
 }
 
 fmt.Printf("Bytecode size: %d bytes\n", len(bytecode))
@@ -302,7 +444,7 @@ fmt.Printf("Bytecode size: %d bytes\n", len(bytecode))
 // Execute the compiled bytecode
 result, err := ctx.Eval("compiled-math.js", qjs.Bytecode(bytecode))
 if err != nil {
-    log.Fatal("Bytecode execution error:", err)
+	log.Fatal("Bytecode execution error:", err)
 }
 
 fmt.Printf("Fibonacci(10): %d\n", result.GetPropertyStr("fib10").Int32())
@@ -317,67 +459,48 @@ ProxyValue is a feature that allows you to pass Go values directly to JavaScript
 ProxyValue creates a lightweight JavaScript wrapper around Go values, storing only a reference ID rather than copying the entire value. This is particularly useful for **pass-through scenarios** where JavaScript receives a Go value and passes it back to Go without needing to access its contents.
 
 Key benefits:
-- **Zero-copy data sharing** - no serialization/deserialization overhead
-- **Pass-through efficiency** - JavaScript can hold and return Go values without conversion
-- **Type preservation** - original Go types are maintained across boundaries
-- **Resource efficiency** - perfect for objects like `context.Context`, database connections, or large structs
-
-**Most common use case**: JavaScript callbacks that receive Go values (like `context.Context`) and pass them back to Go functions without ever accessing the value contents in JavaScript.
+- **Zero-copy data sharing** - no serialization/deserialization overhead.
+- **Pass-through efficiency** - JavaScript can hold and return Go values without conversion.
+- **Type preservation** - original Go types are maintained across boundaries.
+- **Resource efficiency** - perfect for objects like `context.Context`, database connections, or large structs.
 
 #### Basic ProxyValue Usage
 
 ```go
-package main
-
-import (
-	"context"
-	"fmt"
-
-	"github.com/fastschema/qjs"
-)
-
-func main() {
-	rt, err := qjs.New()
-	if err != nil {
-		panic(err)
-	}
-	defer rt.Close()
-	ctx := rt.Context()
-
-	// Create a Go function that accepts context and a number
-	goFuncWithContext := func(ctx context.Context, num int) int {
-		// Access context values in Go
-		fmt.Printf("Context received: %v\n", ctx)
-		return num * 2
-	}
-
-	// Convert Go function to JavaScript function
-	jsFuncWithContext, err := qjs.ToJSValue(ctx, goFuncWithContext)
-	if err != nil {
-		panic(err)
-	}
-	defer jsFuncWithContext.Free()
-	ctx.Global().SetPropertyStr("funcWithContext", jsFuncWithContext)
-
-	// Create a helper function that returns a ProxyValue
-	ctx.SetFunc("$context", func(this *qjs.This) (*qjs.Value, error) {
-		// Create context as ProxyValue - JavaScript will never access its contents
-		val := ctx.NewProxyValue(context.Background())
-		return val, nil
-	})
-
-	// JavaScript gets context as ProxyValue and passes it to Go function
-	result, err := ctx.Eval("test.js", qjs.Code(`
-		funcWithContext($context(), 10);
-	`))
-	if err != nil {
-		panic(err)
-	}
-	defer result.Free()
-
-	// Output: 20
-	fmt.Println(result.Int32())
+// Create a Go function that accepts context and a number
+goFuncWithContext := func(c context.Context, num int) int {
+	// Access context values in Go
+	log.Println("Context value:", c.Value("key"))
+	return num * 2
 }
+
+// Convert Go function to JavaScript function
+jsFuncWithContext, err := qjs.ToJSValue(ctx, goFuncWithContext)
+if err != nil {
+	log.Fatal("Func conversion error:", err)
+}
+defer jsFuncWithContext.Free()
+ctx.Global().SetPropertyStr("funcWithContext", jsFuncWithContext)
+
+// Create a helper function that returns a ProxyValue
+ctx.SetFunc("$context", func(this *qjs.This) (*qjs.Value, error) {
+	// Create context as ProxyValue - JavaScript will never access its contents
+	passContext := context.WithValue(context.Background(), "key", "value123")
+	val := ctx.NewProxyValue(passContext)
+	return val, nil
+})
+
+// JavaScript gets context as ProxyValue and passes it to Go function
+result, err := ctx.Eval("test.js", qjs.Code(`
+	funcWithContext($context(), 10);
+`))
+if err != nil {
+	log.Fatal("Eval error:", err)
+}
+defer result.Free()
+
+// Output: 20
+log.Println("Result:", result.Int32())
 ```
 
 ### GO-JS Conversion
@@ -387,6 +510,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/fastschema/qjs"
 )
@@ -415,7 +539,7 @@ func (u User) IsAdult() bool {
 func main() {
 	rt, err := qjs.New()
 	if err != nil {
-		panic(err)
+		log.Fatalf("Failed to create QuickJS runtime: %v", err)
 	}
 	defer rt.Close()
 	ctx := rt.Context()
@@ -424,7 +548,7 @@ func main() {
 	ctx.Global().SetPropertyStr("goString", ctx.NewString("Hello, World!"))
 	jsUser, err := qjs.ToJSValue(ctx, User{ID: 1, Name: "Alice", Age: 25})
 	if err != nil {
-		panic(err)
+		log.Fatalf("Failed to convert User to JS value: %v", err)
 	}
 	ctx.Global().SetPropertyStr("goUser", jsUser)
 
@@ -432,18 +556,20 @@ func main() {
 		const post = {
 			id: goInt,
 			name: goString,
-			author: goUser
+			author: goUser,
+			displayName: goUser.GetDisplayName(),
+			isAdult: goUser.IsAdult()
 		};
 		post;
 	`))
 	if err != nil {
-		panic(err)
+		log.Fatalf("Failed to evaluate JS code: %v", err)
 	}
 	defer result.Free()
 
 	goPost, err := qjs.JsValueToGo[Post](result)
 	if err != nil {
-		panic(err)
+		log.Fatalf("Failed to convert JS value to Post: %v", err)
 	}
 
 	// Output:
@@ -452,11 +578,15 @@ func main() {
 	// Author ID: 1
 	// Author Name: Alice
 	// Author Age: 25
-	fmt.Printf("Post ID: %d\n", goPost.ID)
-	fmt.Printf("Post Name: %s\n", goPost.Name)
-	fmt.Printf("Author ID: %d\n", goPost.Author.ID)
-	fmt.Printf("Author Name: %s\n", goPost.Author.Name)
-	fmt.Printf("Author Age: %d\n", goPost.Author.Age)
+	// Author Display Name: Alice (25)
+	// Author Is Adult: true
+	log.Printf("Post ID: %d\n", goPost.ID)
+	log.Printf("Post Name: %s\n", goPost.Name)
+	log.Printf("Author ID: %d\n", goPost.Author.ID)
+	log.Printf("Author Name: %s\n", goPost.Author.Name)
+	log.Printf("Author Age: %d\n", goPost.Author.Age)
+	log.Printf("Author Display Name: %s\n", goPost.Author.GetDisplayName())
+	log.Printf("Author Is Adult: %t\n", goPost.Author.IsAdult())
 }
 ```
 
@@ -488,14 +618,14 @@ func main() {
 	numTasks := 3
 	var wg sync.WaitGroup
 
-	for i := 0; i < numWorkers; i++ {
+	for i := range numWorkers {
 		wg.Add(1)
 		go func(workerID int) {
 			defer wg.Done()
 			for j := 0; j < numTasks; j++ {
 				rt, err := pool.Get()
 				if err != nil {
-					panic(err)
+					log.Fatalf("Failed to get runtime from pool: %v", err)
 				}
 				defer pool.Put(rt)
 				ctx := rt.Context()
@@ -512,7 +642,7 @@ func main() {
 					});
 				`))
 				if err != nil {
-					panic(err)
+					log.Fatalf("JS execution error: %v", err)
 				}
 				defer result.Free()
 				log.Println(result.GetPropertyStr("message").String())
@@ -540,14 +670,17 @@ import "github.com/fastschema/qjs"
 
 ```
 ┌─────────────┐      ┌─────────────┐      ┌─────────────┐
-│   Your Go   │ ---> │   Wazero    │ ---> │   QuickJS   │
-│ Application │      │ WebAssembly │      │ JavaScript  │
+│   Your Go   │      │   Wazero    │      │   QuickJS   │
+│ Application │ ---> │ WebAssembly │ ---> │ JavaScript  │
 │             │      │  Runtime    │      │   Engine    │
 └─────────────┘      └─────────────┘      └─────────────┘
        ^                    ^                     ^
        │                    │                     │
-   Structured           Sandboxed              ES2020+
-   Go Types               Memory              Modern JS
+   Structured           Sandboxed              ES2023
+      Data              Execution            JavaScript
+       │                    │                     │
+       └────────────────────┴─────────────────────┘
+                           QJS
 ```
 
 ## API Reference
@@ -614,52 +747,45 @@ type Option struct {
 ## Performance & Security
 
 **Optimization Tips:**
-1. Use runtime pools for concurrent applications
-2. Compile frequently-used scripts to bytecode
-3. Use ProxyValue for large objects or shared state to avoid serialization overhead
-4. Minimize small object conversions between Go and JS - prefer ProxyValue for complex types
-5. Set appropriate memory limits
+1. Use runtime pools for concurrent applications.
+2. Compile frequently-used scripts to bytecode.
+3. Use ProxyValue for large objects or shared state to avoid serialization overhead.
+4. Minimize small object conversions between Go and JS - prefer ProxyValue for complex types.
+5. Set appropriate memory limits.
 
 **Security**
 
-- **Complete filesystem isolation** (unless explicitly configured)  
-- **No network access** from JavaScript (unless explicitly allowed)
-- **Memory safe** - no buffer overflows  
-- **No CGO attack surface**  
-- **Deterministic resource cleanup**
-- **ProxyValue safety** - Go values are protected by type checking and automatic cleanup
+- **Complete filesystem isolation** (unless explicitly configured).
+- **No network access** from JavaScript (unless explicitly allowed).
+- **Memory safe** - no buffer overflows.
+- **No CGO attack surface**.
+- **Deterministic resource cleanup**.
 
 ### Memory Management
 
 **Critical Rules:**
-- Always call `result.Free()` on JavaScript values
-- Always call `rt.Close()` when done with runtime
-- Don't free functions registered to global object
-- Don't free object properties directly – free the entire object
+- Always call `result.Free()` on JavaScript values.
+- Always call `rt.Close()` when done with runtime.
+- Don't free functions registered to global object.
+- Don't free object properties directly – free the entire object.
 
 ```go
 // Correct pattern
 result, err := ctx.Eval("script.js", code)
 if err != nil {
-    return err
+  return err
 }
-defer result.Free() // Always free values
 
-// Wrong - will cause memory leaks
-result, _ := ctx.Eval("script.js", code)
-// Missing result.Free()
+// Always free values
+defer result.Free()
 ```
 
 **Choose QJS when you need:**
-- Modern JavaScript features with security
-- Zero external dependencies
-- Plugin systems or user-generated code
-- Compliance with strict security requirements
-
-**Choose alternatives when:**
-- **v8go**: Maximum performance and you can manage CGO dependencies
-- **goja**: Simple scripts and don't need modern JS features
-- **otto**: Legacy JavaScript and minimal dependencies
+- Secure modern JavaScript features.
+- Single dependency (Wazero), no CGO.
+- Supports plugin systems and user-generated code.
+- Compliant with strict security requirements.
+- High performance with low memory footprint.
 
 ## Building from Source
 
@@ -671,6 +797,8 @@ result, _ := ctx.Eval("script.js", code)
 - Make
 
 ### Quick Build
+
+**Development Setup:**
 
 ```bash
 # Clone with submodules
@@ -688,42 +816,21 @@ make build
 go test ./...
 ```
 
-### Development Workflow
-
-```bash
-# Build and test
-make build && go test ./...
-
-# Run benchmarks
-go test -bench=. ./...
-
-# Coverage report
-go test -coverprofile=coverage.out ./...
-go tool cover -html=coverage.out
-
-```
+**Code Standards:**
+- Follow standard Go conventions (`gofmt`, `golangci-lint`).
+- Add tests for new features.
+- Update documentation for API changes.
+- Keep commit messages clear and descriptive.
 
 ## Contributing
 
 We'd love your help making QJS better! Here's how:
 
-1. **Found a bug?** [Open an issue](https://github.com/fastschema/qjs/issues)
-2. **Want a feature?** Start a discussion
-3. **Ready to code?** Fork, branch, test, and submit a PR
-
-**Development Setup:**
-```bash
-git clone --recursive https://github.com/fastschema/qjs.git
-cd qjs
-make build
-go test ./...
-```
-
-**Code Standards:**
-- Follow standard Go conventions (`gofmt`, `golangci-lint`)
-- Add tests for new features  
-- Update documentation for API changes
-- Keep commit messages clear and descriptive
+1. **Found a bug?** [Open an issue](https://github.com/fastschema/qjs/issues).
+2. **Want a feature?** Start a discussion.
+3. **Ready to code?** Fork, branch, test, and submit a PR.
+4. **Review PRs** - help review and test contributions.
+5. **Star the repo** - it helps us grow!
 
 ## Support & Community
 
@@ -732,12 +839,18 @@ go test ./...
 - **Discussions**: [GitHub Discussions](https://github.com/fastschema/qjs/discussions)
 
 **Getting Help:**
-1. Check existing issues and documentation
-2. Create a minimal reproduction case
-3. Include Go version, OS, and QJS version
-4. Be specific about expected vs actual behavior
+1. Check existing issues and documentation.
+2. Create a minimal reproduction case.
+3. Include Go version, OS, and QJS version.
+4. Be specific about expected vs actual behavior.
 
-
+## Roadmap
+Planned features and improvements:
+- Enhanced ProxyValue capabilities.
+- Improved GO-JS type conversions.
+- More examples and documentation.
+- Performance optimizations.
+- Node.js-like standard library.
 
 ## License
 
@@ -747,9 +860,9 @@ MIT License - see [LICENSE](LICENSE) file.
 
 Built on the shoulders of giants:
 
-- **[QuickJS](https://bellard.org/quickjs/)** by Fabrice Bellard - The elegant JavaScript engine
-- **[Wazero](https://wazero.io/)** - Pure Go WebAssembly runtime  
-- **[QuickJS-NG](https://github.com/quickjs-ng/quickjs)** - Maintained QuickJS fork
+- **[QuickJS](https://bellard.org/quickjs/)** by Fabrice Bellard - The elegant JavaScript engine.
+- **[Wazero](https://wazero.io/)** - Pure Go WebAssembly runtime.
+- **[QuickJS-NG](https://github.com/quickjs-ng/quickjs)** - Maintained QuickJS fork.
 
 ---
 
