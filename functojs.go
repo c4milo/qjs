@@ -1,7 +1,6 @@
 package qjs
 
 import (
-	"context"
 	"fmt"
 	"reflect"
 )
@@ -130,12 +129,7 @@ func handlePointerArgument(jsArg *Value, argType reflect.Type) (reflect.Value, e
 func CreateNonNilSample(argType reflect.Type) any {
 	switch argType.Kind() {
 	case reflect.Interface:
-		// Special handling for context.Context
-		if argType.Implements(reflect.TypeOf((*context.Context)(nil)).Elem()) {
-			return context.Background()
-		}
-
-		// For other interfaces, return nil to let the conversion
+		// return nil to let the conversion
 		// use the default logic which can handle dynamic type inference
 		return nil
 
