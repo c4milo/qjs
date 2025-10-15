@@ -91,25 +91,17 @@ static JSValue js_navigator_get_userAgent(JSContext *ctx, JSValue this_val)
     return JS_NewString(ctx, version);
 }
 
-// static const JSCFunctionListEntry global_obj[] = {
-//     JS_CFUNC_DEF("gc", 0, js_gc),
-// };
+static const JSCFunctionListEntry global_obj[] = {
+    JS_CFUNC_DEF("gc", 0, js_gc),
+};
 
-// static const JSCFunctionListEntry navigator_proto_funcs[] = {
-//     JS_CGETSET_DEF2("userAgent", js_navigator_get_userAgent, NULL, JS_PROP_CONFIGURABLE | JS_PROP_ENUMERABLE),
-//     JS_PROP_STRING_DEF("[Symbol.toStringTag]", "Navigator", JS_PROP_CONFIGURABLE),
-// };
+static const JSCFunctionListEntry navigator_proto_funcs[] = {
+    JS_CGETSET_DEF2("userAgent", js_navigator_get_userAgent, NULL, JS_PROP_CONFIGURABLE | JS_PROP_ENUMERABLE),
+    JS_PROP_STRING_DEF("[Symbol.toStringTag]", "Navigator", JS_PROP_CONFIGURABLE),
+};
 
 void js_set_global_objs(JSContext *ctx)
 {
-    const JSCFunctionListEntry global_obj[] = {
-        JS_CFUNC_DEF("gc", 0, js_gc),
-    };
-    const JSCFunctionListEntry navigator_proto_funcs[] = {
-        JS_CGETSET_DEF2("userAgent", js_navigator_get_userAgent, NULL, JS_PROP_CONFIGURABLE | JS_PROP_ENUMERABLE),
-        JS_PROP_STRING_DEF("[Symbol.toStringTag]", "Navigator", JS_PROP_CONFIGURABLE),
-    };
-
     JSValue global = JS_GetGlobalObject(ctx);
     JS_SetPropertyFunctionList(
         ctx,

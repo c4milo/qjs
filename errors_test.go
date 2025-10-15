@@ -198,7 +198,7 @@ func TestNewJsToGoErr(t *testing.T) {
 
 	ctx := rt.Context()
 
-	t.Run("JSONStringify failure path", func(t *testing.T) {
+	t.Run("JSONStringifyFailure", func(t *testing.T) {
 		// Create a value that will cause JSONStringify to fail
 		circularValue := createCircularValue(ctx)
 		defer circularValue.Free()
@@ -211,7 +211,7 @@ func TestNewJsToGoErr(t *testing.T) {
 		assert.Contains(t, result.Error(), "[object Object]")
 	})
 
-	t.Run("successful JSONStringify", func(t *testing.T) {
+	t.Run("JSONStringifySuccess", func(t *testing.T) {
 		value := ctx.NewString("hello")
 		defer value.Free()
 
