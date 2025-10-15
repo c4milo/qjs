@@ -47,55 +47,33 @@ QJS allows you to run JavaScript code safely and efficiently, with full support 
 
 Computing factorial(10) 1,000,000 times
 
-| Ite | Engine | Duration      | Memory        | Allocations | Frees | Heap Alloc | Heap Objects |
-|-----|--------|---------------|---------------|-------------|-------|------------|--------------|
-| 1   | Goja   | 1.036s        | 91.6 MB       | 7.0M        | 7.0M  | 575.4 KB   | 24.3K        |
-|     | QJS    | **695.809ms** | **992.3 KB**  | **1.5K**    | 34    | 992.3 KB   | 1.4K         |
-|     |        |               |               |             |       |            |              |
-| 2   | Goja   | 1.052s        | 91.6 MB       | 7.0M        | 6.9M  | 2.4 MB     | 105.8K       |
-|     | QJS    | **701.243ms** | **992.3 KB**  | **1.5K**    | 34    | 992.3 KB   | 1.4K         |
-|     |        |               |               |             |       |            |              |
-| 3   | Goja   | 1.061s        | 91.6 MB       | 7.0M        | 6.9M  | 2.4 MB     | 103.3K       |
-|     | QJS    | **696.371ms** | **993.1 KB**  | **1.5K**    | 34    | 993.1 KB   | 1.4K         |
-|     |        |               |               |             |       |            |              |
-| 4   | Goja   | 1.061s        | 91.6 MB       | 7.0M        | 7.0M  | 1.1 MB     | 48.5K        |
-|     | QJS    | **699.354ms** | **1001.6 KB** | **1.5K**    | 34    | 1001.6 KB  | 1.4K         |
-|     |        |               |               |             |       |            |              |
-| 5   | Goja   | 1.060s        | 91.6 MB       | 7.0M        | 7.0M  | 1.1 MB     | 47.2K        |
-|     | QJS    | **702.952ms** | **992.3 KB**  | **1.5K**    | 34    | 992.3 KB   | 1.4K         |
-|-----|--------|---------------|---------------|-------------|-------|------------|--------------|
-| Avg | Goja   | 1.054s        | 91.6 MB       | 7.0M        | 6.9M  | 1.5 MB     | 65.8K        |
-|     | QJS    | **699.146ms** | **994.3 KB**  | **1.5K**    | 34    | 994.3 KB   | 1.4K         |
+| Iteration | GOJA | ModerncQuickJS | QJS |
+| --- | --- | --- | --- |
+| 1 | 1.128s | 1.897s | 737.635ms |
+| 2 | 1.134s | 1.936s | 742.670ms |
+| 3 | 1.123s | 1.898s | 738.737ms |
+| 4 | 1.120s | 1.900s | 754.692ms |
+| 5 | 1.132s | 1.918s | 756.924ms |
+| Average | 1.127s | 1.910s | **746.132ms** |
+| Total | 5.637s | 9.549s | **3.731s** |
+| Speed | 1.51x | 2.56x | 1.00x |
 
-**Performance Comparison**
-- **Time**: QJS is **1.51x faster** than Goja.
-- **Memory**: QJS uses **94.30x less** memory than Goja.
-
-**Total Execution Times**
-- **Goja**: 5.271594245s (mem: 457.8 MB).
-- **QJS**: 3.495730965s (mem: 4.9 MB).
-
-**About QJS WebAssembly**
-- QJS runs via WASM (Wazero runtime).
-- Allocations/Frees/Objects metrics show Go-level only because WASM-internal allocations are not visible to Go runtime.
-- Memory usage is accurate for both engines.
+*Benchmarks run on AMD Ryzen 7 7840HS, 32GB RAM, Linux*
 
 ### AreWeFastYet V8-V7
-| Metric        | qjs     		| goja    	|
-|---------------|-------------|-----------|
-| Version       | latest  		| latest  	|
-| Exe size      | **8.5 MB** 	| 13.2 MB		|
-| Richards      | **431** 		| 365     	|
-| DeltaBlue     | **445** 		| 385     	|
-| Crypto        | **383** 		| 187     	|
-| RayTrace      | **503** 		| 335     	|
-| EarleyBoyer   | **816** 		| 694     	|
-| RegExp        | 135     		| **306** 	|
-| Splay         | **1190**		| 786     	|
-| NavierStokes  | **639** 		| 292     	|
-| Score         | **486** 		| 379     	|
-| Score/MB      | **57**  		| 28      	|
-| Time(s)       | **73**  		| 84      	|
+
+| Metric | GOJA | ModerncQuickJS | QJS |
+| --- | --- | --- | --- |
+| Richards | 345 | 189 | **434** |
+| DeltaBlue | 411 | 205 | **451** |
+| Crypto | 203 | 305 | **393** |
+| RayTrace | 404 | 347 | **488** |
+| EarleyBoyer | 779 | 531 | **852** |
+| RegExp | **381** | 145 | 142 |
+| Splay | 1289 | 856 | **1408** |
+| NavierStokes | 324 | 436 | **588** |
+| Score (version 7) | 442 | 323 | **498** |
+| Duration (seconds) | 78.349s | 97.240s | **72.004s** |
 
 *Benchmarks run on AMD Ryzen 7 7840HS, 32GB RAM, Linux*
 
