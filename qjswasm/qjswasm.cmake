@@ -1,5 +1,3 @@
-
-
 macro(add_qjs_libc_if_needed target)
     if(NOT QJS_BUILD_LIBC)
         target_sources(${target} PRIVATE quickjs-libc.c)
