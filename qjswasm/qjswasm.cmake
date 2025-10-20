@@ -23,6 +23,12 @@ if(CMAKE_SYSTEM_NAME STREQUAL "WASI")
     )
 endif()
 
+# Optional debug flag for runtime address randomization
+option(QJS_DEBUG_RUNTIME_ADDRESS "Enable runtime address randomization debugging" OFF)
+if(QJS_DEBUG_RUNTIME_ADDRESS)
+    add_compile_definitions(QJS_DEBUG_RUNTIME_ADDRESS)
+endif()
+
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "WASI")
     list(APPEND qjs_libs ${CMAKE_THREAD_LIBS_INIT})
 endif()
@@ -33,6 +39,7 @@ add_executable(qjswasm
     ../eval.c
     ../function.c
     ../helpers.c
+    ../proxy.c
     ../qjs.c
 )
 

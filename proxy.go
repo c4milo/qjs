@@ -125,7 +125,6 @@ func createFuncProxyWithRegistry(registry *ProxyRegistry) JsFunctionProxy {
 	) (rs uint64) {
 		goFunc, this := getProxyFuncParams(registry, module.Memory(), thisVal, argc, argv)
 
-		// Ensure panic recovery for safe execution
 		defer func() {
 			if r := recover(); r != nil {
 				rs = handlePanicRecovery(this, r)
@@ -182,7 +181,6 @@ func getProxyFuncParams(
 	isAsync := args[2]         // The third argument is the async flag
 
 	goFunc, goContext := retrieveGoResources(registry, functionHandle, jsContextHandle)
-
 	promise := extractPromiseIfAsync(goContext, args, isAsync)
 	fnArgs := extractFunctionArguments(goContext, args)
 	this := createThisContext(goContext, thisRef, fnArgs, promise, isAsync)

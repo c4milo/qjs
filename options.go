@@ -213,16 +213,16 @@ func (o *EvalOption) Free() {
 	}
 }
 
-func getRuntimeOption(registry *ProxyRegistry, options ...*Option) (option *Option, err error) {
-	if len(options) == 0 || options[0] == nil {
-		option = &Option{}
+func getRuntimeOption(registry *ProxyRegistry, options ...Option) (option Option, err error) {
+	if len(options) == 0 {
+		option = Option{}
 	} else {
 		option = options[0]
 	}
 
 	if option.CWD == "" {
 		if option.CWD, err = os.Getwd(); err != nil {
-			return nil, fmt.Errorf("cannot get current working directory: %w", err)
+			return Option{}, fmt.Errorf("cannot get current working directory: %w", err)
 		}
 	}
 

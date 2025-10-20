@@ -3,6 +3,37 @@
 #include <limits.h>
 #include <float.h>
 
+#ifdef QJS_DEBUG_RUNTIME_ADDRESS
+/**
+ * Allocates a random-sized block of memory to randomize address space layout.
+ * This helps in debugging by ensuring runtime objects are allocated at different
+ * addresses on each run, making pointer-related bugs more apparent.
+ */
+void randomize_address_space(void)
+{
+    static unsigned int call_counter = 0;
+    int stack_variable;
+
+    // Generate entropy from multiple sources for better randomization
+    unsigned int entropy = (unsigned int)((uintptr_t)&stack_variable ^ // Stack address (varies per call)
+                                          (uintptr_t)time(NULL) ^      // Current time
+                                          (uintptr_t)clock() ^         // Clock ticks (higher resolution)
+                                          (++call_counter)             // Incremental counter
+    );
+
+    // Allocate 1-1024 bytes to perturb the address space
+    size_t allocation_size = (entropy % 1024) + 1;
+    volatile void *random_allocation = malloc(allocation_size);
+
+    // Note: Intentionally not freeing to affect subsequent allocations
+    // Touch the allocated memory to ensure it's not optimized away
+    if (random_allocation)
+    {
+        *((volatile char *)random_allocation) = 0;
+    }
+}
+#endif
+
 JSValue JS_NewNull() { return JS_NULL; }
 JSValue JS_NewUndefined() { return JS_UNDEFINED; }
 JSValue JS_NewUninitialized() { return JS_UNINITIALIZED; }
@@ -606,34 +637,8 @@ JSValue QJS_Call(JSContext *ctx, JSValue func, JSValue this, int argc, uint64_t 
     return JS_Call(ctx, func, this, argc, js_argv);
 }
 
-// Create a new QJS_PROXY_VALUE instance directly in C for better performance
-JSValue QJS_NewProxyValue(JSContext *ctx, int64_t proxyId)
+void QJS_Panic()
 {
-    // Get the QJS_PROXY_VALUE constructor from global object
-    JSValue global_obj = JS_GetGlobalObject(ctx);
-    JSValue ctor = JS_GetPropertyStr(ctx, global_obj, "QJS_PROXY_VALUE");
-    JS_FreeValue(ctx, global_obj);
-
-    if (JS_IsException(ctor) || JS_IsUndefined(ctor)) {
-        JS_FreeValue(ctx, ctor);
-        return JS_ThrowReferenceError(ctx, "QJS_PROXY_VALUE is not defined");
-    }
-
-    // Create argument for the constructor (proxyId)
-    JSValue arg = JS_NewInt64(ctx, proxyId);
-    JSValue args[1] = { arg };
-
-    // Call the constructor with 'new'
-    JSValue result = JS_CallConstructor(ctx, ctor, 1, args);
-
-    // Clean up
-    JS_FreeValue(ctx, ctor);
-    JS_FreeValue(ctx, arg);
-
-    return result;
-}
-
-void QJS_Panic() {
     // Handle panic situation
     fprintf(stderr, "QJS Panic: Unrecoverable error occurred\n");
     abort();
