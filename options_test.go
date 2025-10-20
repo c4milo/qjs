@@ -39,11 +39,7 @@ func TestEvalOptions(t *testing.T) {
 
 		t.Run("explicit_cwd_provided", func(t *testing.T) {
 			tempDir := t.TempDir()
-			options := &qjs.Option{
-				CWD: tempDir,
-			}
-
-			runtime, err := qjs.New(options)
+			runtime, err := qjs.New(qjs.Option{CWD: tempDir})
 			require.NoError(t, err)
 			runtime.Close()
 		})

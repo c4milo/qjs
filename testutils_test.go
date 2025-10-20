@@ -213,9 +213,7 @@ func genModeGlobalTests(t *testing.T) []modeGlobalTest {
 func runModeGlobalTests(t *testing.T, tests []modeGlobalTest, isScript bool) {
 	for _, test := range tests {
 		t.Run(test.file, func(t *testing.T) {
-			runtime := must(qjs.New(&qjs.Option{
-				MaxStackSize: 512 * 1024,
-			}))
+			runtime := must(qjs.New(qjs.Option{MaxStackSize: 512 * 1024}))
 			defer runtime.Close()
 			var val *qjs.Value
 			var err error

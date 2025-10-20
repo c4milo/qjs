@@ -30,7 +30,7 @@ type Runtime struct {
 	malloc   api.Function
 	free     api.Function
 	mem      *Mem
-	option   *Option
+	option   Option
 	handle   *Handle
 	context  *Context
 	registry *ProxyRegistry
@@ -76,7 +76,7 @@ func createGlobalCompiledModule(
 }
 
 // New creates a QuickJS runtime with optional configuration.
-func New(options ...*Option) (runtime *Runtime, err error) {
+func New(options ...Option) (runtime *Runtime, err error) {
 	defer func() {
 		rerr := AnyToError(recover())
 		if rerr != nil {
@@ -145,6 +145,10 @@ func New(options ...*Option) (runtime *Runtime, err error) {
 	runtime.initializeRuntime()
 
 	return runtime, nil
+}
+
+func (r *Runtime) Raw() uint64 {
+	return r.handle.raw
 }
 
 // FreeQJSRuntime frees the QJS runtime.
@@ -320,19 +324,15 @@ func (r *Runtime) call(name string, args ...uint64) uint64 {
 type Pool struct {
 	pools      chan *Runtime
 	size       int
-	option     *Option
+	option     Option
 	setupFuncs []func(*Runtime) error
 	mu         sync.Mutex
 }
 
 // NewPool creates a new runtime pool with the specified size and configuration.
-func NewPool(size int, option *Option, setupFuncs ...func(*Runtime) error) *Pool {
+func NewPool(size int, option Option, setupFuncs ...func(*Runtime) error) *Pool {
 	if size <= 0 {
 		panic("pool size must be greater than 0")
-	}
-
-	if option == nil {
-		option = &Option{}
 	}
 
 	p := &Pool{

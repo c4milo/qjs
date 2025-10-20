@@ -54,7 +54,7 @@ func testConcurrentRuntimeExecution(t *testing.T, threadID int) {
 }
 
 func createTestPoolWithSetup() *qjs.Pool {
-	return qjs.NewPool(10, &qjs.Option{
+	return qjs.NewPool(10, qjs.Option{
 		MaxStackSize: 1024 * 1024 * 10,
 	}, func(rt *qjs.Runtime) error {
 		_, err := rt.Context().Eval(
@@ -93,7 +93,7 @@ func testPooledRuntimeExecution(t *testing.T, pool *qjs.Pool, workerID int) {
 }
 
 func createTestPool(size int, setupFuncs ...func(*qjs.Runtime) error) *qjs.Pool {
-	return qjs.NewPool(size, nil, setupFuncs...)
+	return qjs.NewPool(size, qjs.Option{}, setupFuncs...)
 }
 
 func verifyRuntimeExecution(t *testing.T, rt *qjs.Runtime, code string, expected any) {
@@ -131,18 +131,19 @@ func TestRuntime(t *testing.T) {
 	t.Run("RuntimeCreation", func(t *testing.T) {
 		rt, _ := setupTestContext(t)
 		assert.Contains(t, rt.String(), "QJSRuntime")
+		assert.NotZero(t, rt.Raw(), "Runtime raw pointer should not be zero")
 	})
 
 	t.Run("RuntimeCreationWithInvalidProxyFunction", func(t *testing.T) {
 		invalidFunc := "invalidFunction"
-		_, err := qjs.New(&qjs.Option{ProxyFunction: invalidFunc})
+		_, err := qjs.New(qjs.Option{ProxyFunction: invalidFunc})
 		assert.Error(t, err, "Creating runtime with invalid proxy function should return error")
 	})
 
 	t.Run("RuntimeCreationWithCanceledContext", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
-		_, err := qjs.New(&qjs.Option{
+		_, err := qjs.New(qjs.Option{
 			Context:            ctx,
 			CloseOnContextDone: true,
 			DisableBuildCache:  true,
@@ -154,7 +155,7 @@ func TestRuntime(t *testing.T) {
 		// Too short to be valid WASM
 		truncatedWasmBytes := []byte{0x00, 0x61, 0x73}
 
-		_, err := qjs.New(&qjs.Option{QuickJSWasmBytes: truncatedWasmBytes})
+		_, err := qjs.New(qjs.Option{QuickJSWasmBytes: truncatedWasmBytes})
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to create global compiled module")
 		assert.Contains(t, err.Error(), "failed to compile qjs module")
@@ -163,7 +164,7 @@ func TestRuntime(t *testing.T) {
 
 	t.Run("RuntimeCreationWithErrorStartFunction", func(t *testing.T) {
 		invalidStartFunc := "QJS_Panic"
-		_, err := qjs.New(&qjs.Option{StartFunctionName: invalidStartFunc})
+		_, err := qjs.New(qjs.Option{StartFunctionName: invalidStartFunc})
 		assert.Error(t, err, "Creating runtime with invalid start function should return error")
 	})
 
@@ -204,7 +205,7 @@ func TestRuntime(t *testing.T) {
 
 	t.Run("MallocError", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
-		rt := must(qjs.New(&qjs.Option{
+		rt := must(qjs.New(qjs.Option{
 			Context:            ctx,
 			CloseOnContextDone: true,
 			DisableBuildCache:  true,
@@ -227,7 +228,7 @@ func TestRuntime(t *testing.T) {
 
 	t.Run("FreeHandleError", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
-		rt := must(qjs.New(&qjs.Option{Context: ctx}))
+		rt := must(qjs.New(qjs.Option{Context: ctx}))
 		ptr := rt.Malloc(1024)
 		cancel() // Cancel context to simulate error
 		assert.Panics(t, func() {
@@ -247,7 +248,7 @@ func TestRuntime(t *testing.T) {
 		val.Free()
 
 		invalidBytes := []byte{0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00}
-		_, err = qjs.New(&qjs.Option{QuickJSWasmBytes: invalidBytes})
+		_, err = qjs.New(qjs.Option{QuickJSWasmBytes: invalidBytes})
 		assert.Error(t, err, "Creating runtime with invalid QuickJSWasmBytes should return error")
 
 		rt2, err := qjs.New()
@@ -464,7 +465,7 @@ func TestPoolSetupFunctionHandling(t *testing.T) {
 		invalidBytes := []byte{0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00}
 		setupFunc := createSetupFunction("setupValue", "test", true, fmt.Errorf("invalid WASM bytes"))
 
-		pool := qjs.NewPool(3, &qjs.Option{QuickJSWasmBytes: invalidBytes}, setupFunc)
+		pool := qjs.NewPool(3, qjs.Option{QuickJSWasmBytes: invalidBytes}, setupFunc)
 		rt, err := pool.Get()
 		assert.Nil(t, rt)
 		assert.Error(t, err)
@@ -548,4 +549,49 @@ func TestPoolConcurrentAccess(t *testing.T) {
 
 		assert.Equal(t, numThreads, successCount, "All goroutines should complete successfully")
 	})
+}
+
+func TestPoolCallGoFuncFromJs(t *testing.T) {
+	pool := qjs.NewPool(5, qjs.Option{}, func(rt *qjs.Runtime) error {
+		result, err := rt.Context().Eval("<main>", qjs.Code(`
+		const hello = (i, getEntity) => getEntity();
+		export default { hello };
+		`), qjs.TypeModule())
+		if err != nil {
+			return err
+		}
+
+		rt.Context().Global().SetPropertyStr("defaultExports", result)
+		return nil
+	})
+
+	invokeJsFunc := func(jsFuncName string, args ...any) (*qjs.Value, error) {
+		rt, err := pool.Get()
+		if err != nil {
+			return nil, err
+		}
+		defer pool.Put(rt)
+
+		defaultExports := rt.Context().Global().GetPropertyStr("defaultExports")
+		return defaultExports.Invoke(jsFuncName, args...)
+	}
+
+	var wg sync.WaitGroup
+	concurrentRoutines := 10
+	for i := range concurrentRoutines {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			getEntity := func() map[string]any {
+				return map[string]any{
+					"id":   i,
+					"name": fmt.Sprintf("Entity %d", i),
+				}
+			}
+			_, err := invokeJsFunc("hello", i, getEntity)
+			assert.NoError(t, err)
+		}(i)
+	}
+
+	wg.Wait()
 }

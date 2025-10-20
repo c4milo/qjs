@@ -79,6 +79,12 @@ JSValue InvokeAsyncFunctionProxy(JSContext *ctx, JSValueConst this_val, int argc
 // JSValue goAsyncFunctionProxy(JSContext *ctx, JSValueConst thisVal, int argc, JSValueConst *argv);
 
 JSValue jsFunctionProxy(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
+#ifdef QJS_DEBUG_RUNTIME_ADDRESS
+void randomize_address_space(void);
+#endif
+
+int init_qjs_proxy_value_class(JSContext *ctx);
+
 JSContext *New_QJSContext(JSRuntime *rt);
 // QJSRuntime *New_QJS(QJSRuntimeOptions);
 QJSRuntime *New_QJS(
