@@ -46,6 +46,7 @@ type Option struct {
 	ProxyFunction      any
 	Stdout             io.Writer
 	Stderr             io.Writer
+	CacheDir           string
 }
 
 // EvalOption configures JavaScript evaluation behavior in QuickJS context.
