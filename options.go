@@ -38,6 +38,7 @@ type Option struct {
 	// because every operation must check the done context, which introduces additional overhead.
 	CloseOnContextDone bool
 	DisableBuildCache  bool
+	CacheDir           string
 	MemoryLimit        int
 	MaxStackSize       int
 	MaxExecutionTime   int
@@ -46,7 +47,6 @@ type Option struct {
 	ProxyFunction      any
 	Stdout             io.Writer
 	Stderr             io.Writer
-	CacheDir           string
 }
 
 // EvalOption configures JavaScript evaluation behavior in QuickJS context.
