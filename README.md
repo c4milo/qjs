@@ -719,6 +719,7 @@ type Option struct {
     MemoryLimit        int     // Memory usage limit  
     MaxExecutionTime   int     // Execution timeout
     GCThreshold        int     // GC trigger threshold
+    CacheDir           string  // Compilation cache directory
 }
 ```
 
