@@ -63,7 +63,7 @@ func createGlobalCompiledModule(
 		if cacheDir == "" || disableBuildCache {
 			cache = wazero.NewCompilationCache()
 		} else if cache, err = wazero.NewCompilationCacheWithDir(cacheDir); err != nil {
-			return fmt.Errorf("failed to create compilation cache: %w", err)
+			return fmt.Errorf("failed to create compilation cache with dir %s: %w", cacheDir, err)
 		}
 
 		cachedRuntimeConfig = wazero.

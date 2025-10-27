@@ -255,6 +255,34 @@ func TestRuntime(t *testing.T) {
 		require.NoError(t, err, "Normal runtime creation should still work after invalid attempt")
 		defer rt2.Close()
 	})
+
+	t.Run("CacheDirOption", func(t *testing.T) {
+		rt1, err := qjs.New(qjs.Option{CacheDir: t.TempDir()})
+		require.NoError(t, err)
+		defer rt1.Close()
+
+		val, err := rt1.Eval("test.js", qjs.Code("21 + 21"))
+		require.NoError(t, err)
+		assert.Equal(t, int32(42), val.Int32())
+		val.Free()
+	})
+
+	t.Run("CacheDirWithEmptyString", func(t *testing.T) {
+		rt, err := qjs.New(qjs.Option{CacheDir: ""})
+		require.NoError(t, err)
+		defer rt.Close()
+
+		val, err := rt.Eval("test.js", qjs.Code("2 * 21"))
+		require.NoError(t, err)
+		assert.Equal(t, int32(42), val.Int32())
+		val.Free()
+	})
+
+	t.Run("CacheDirWithInvalidPath", func(t *testing.T) {
+		_, err := qjs.New(qjs.Option{CacheDir: "/invalid/path/that/does/not/exist", QuickJSWasmBytes: []byte("cachedir")})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to create compilation cache")
+	})
 }
 
 // Concurrent Runtime Usage Tests
