@@ -60,7 +60,7 @@ func createGlobalCompiledModule(
 	// Check if we need to compile or recompile
 	if compiledQJSModule == nil || cachedBytesHash != currentHash || disableBuildCache {
 		var cache wazero.CompilationCache
-		if cacheDir == "" || disableBuildCache {
+		if cacheDir == "" {
 			cache = wazero.NewCompilationCache()
 		} else if cache, err = wazero.NewCompilationCacheWithDir(cacheDir); err != nil {
 			return fmt.Errorf("failed to create compilation cache with dir %s: %w", cacheDir, err)
