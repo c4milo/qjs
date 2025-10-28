@@ -3,6 +3,7 @@ package qjs_test
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -254,6 +255,39 @@ func TestRuntime(t *testing.T) {
 		rt2, err := qjs.New()
 		require.NoError(t, err, "Normal runtime creation should still work after invalid attempt")
 		defer rt2.Close()
+	})
+
+	t.Run("CacheDirOption", func(t *testing.T) {
+		cacheDir := t.TempDir()
+		rt1, err := qjs.New(qjs.Option{CacheDir: cacheDir, DisableBuildCache: true})
+		require.NoError(t, err)
+
+		val, err := rt1.Eval("test.js", qjs.Code("21 + 21"))
+		require.NoError(t, err)
+		assert.Equal(t, int32(42), val.Int32())
+		val.Free()
+
+		rt1.Close()
+		entries, err := os.ReadDir(cacheDir)
+		require.NoError(t, err)
+		assert.NotEmpty(t, entries, "Cache directory should not be empty")
+	})
+
+	t.Run("CacheDirWithEmptyString", func(t *testing.T) {
+		rt, err := qjs.New(qjs.Option{CacheDir: "", DisableBuildCache: true})
+		require.NoError(t, err)
+		defer rt.Close()
+
+		val, err := rt.Eval("test.js", qjs.Code("2 * 21"))
+		require.NoError(t, err)
+		assert.Equal(t, int32(42), val.Int32())
+		val.Free()
+	})
+
+	t.Run("CacheDirWithInvalidPath", func(t *testing.T) {
+		_, err := qjs.New(qjs.Option{CacheDir: "/invalid/path/that/does/not/exist", DisableBuildCache: true})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to create compilation cache")
 	})
 }
 
