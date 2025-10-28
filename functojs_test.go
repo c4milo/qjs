@@ -58,7 +58,7 @@ func TestBasicConversion(t *testing.T) {
 	t.Run("InvalidTypes", func(t *testing.T) {
 		_, err := qjs.FuncToJS(ctx, "not a function")
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "expected GO target function")
+		assert.Contains(t, err.Error(), "expected GO type function")
 	})
 
 	t.Run("FunctionTypes", func(t *testing.T) {

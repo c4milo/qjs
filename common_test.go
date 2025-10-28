@@ -536,14 +536,14 @@ func TestCreateGoBindFuncType(t *testing.T) {
 		t.Run("non_function", func(t *testing.T) {
 			_, err := qjs.CreateGoBindFuncType("not a function")
 			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "expected GO target")
+			assert.Contains(t, err.Error(), "expected GO type")
 			assert.Contains(t, err.Error(), "function")
 		})
 
 		t.Run("integer", func(t *testing.T) {
 			_, err := qjs.CreateGoBindFuncType(42)
 			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "expected GO target")
+			assert.Contains(t, err.Error(), "expected GO type")
 			assert.Contains(t, err.Error(), "function")
 		})
 	})

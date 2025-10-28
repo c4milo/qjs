@@ -9,6 +9,105 @@ import (
 	"time"
 )
 
+func ToGoValue[T any](input *Value, samples ...T) (v T, err error) {
+	registryID := input.GetPropertyStr("__registry_id")
+	if !registryID.IsUndefined() && !registryID.IsNull() {
+		registryVal, ok := input.context.runtime.registry.Get(uint64(registryID.Int64()))
+		if ok {
+			val, ok := registryVal.(T)
+			if !ok {
+				return v, fmt.Errorf("type assertion failed for registry value: expected %T, got %T", v, registryVal)
+			}
+
+			return val, nil
+		}
+	}
+
+	return toGoValue(NewTracker[uint64](), input, samples...)
+}
+
+func toGoValue[T any](
+	tracker *Tracker[uint64],
+	input *Value,
+	samples ...T,
+) (v T, err error) {
+	temp, sample := createTemp(samples...)
+	switch any(sample).(type) {
+	case *Value:
+		tvv, _ := any(input).(T)
+
+		return tvv, nil
+	case Value:
+		tv, _ := any(*input).(T)
+
+		return tv, nil
+	}
+
+	defer func() {
+		v, err = processTempValue("ToGoValue", temp, err, sample)
+	}()
+
+	// If JS value is a QJSProxyValue, extract the Go value from the registry
+	if input.IsQJSProxyValue() {
+		proxyID := input.GetPropertyStr("proxyId")
+		temp, _ = input.context.runtime.registry.Get(uint64(proxyID.Int64()))
+
+		return v, nil
+	}
+
+	var ok bool
+	if temp, ok, err = jsPrimitivesToGo(tracker, input, sample); ok {
+		return v, err
+	}
+
+	if input.IsGlobalInstanceOf("Date") {
+		temp, err = JsTimeToGo(input)
+
+		return v, err
+	}
+
+	if input.IsGlobalInstanceOf("RegExp") {
+		temp = input.String()
+
+		return v, err
+	}
+
+	if input.IsByteArray() {
+		temp, err = JsArrayBufferToGo(input)
+
+		return v, err
+	}
+
+	if IsTypedArray(input) {
+		temp, err = JsTypedArrayToGo(input)
+
+		return v, err
+	}
+
+	if input.IsMap() {
+		temp, err = jsObjectToGo(tracker, input, sample)
+
+		return v, err
+	}
+
+	if input.IsSet() {
+		temp, err = jsSetToGoWithContext(tracker, input, sample)
+
+		return v, err
+	}
+
+	if input.IsArray() {
+		temp, err = jsArrayToGoWithContext(tracker, input, sample)
+
+		return v, err
+	}
+
+	// Fallback for all other object types
+	temp, err = jsObjectToGo(tracker, input, sample)
+
+	return v, err
+}
+
 // JsNumberToGo converts JavaScript numbers to Go numeric types.
 func JsNumberToGo[T any](input *Value, samples ...T) (v T, err error) {
 	temp, sample := createTemp(samples...)
@@ -48,7 +147,7 @@ func JsNumberToGo[T any](input *Value, samples ...T) (v T, err error) {
 		return v, err
 	}
 
-	return v, newInvalidGoTargetErr("numeric type", sample)
+	return v, newInvalidGoTypeErr("numeric type", sample)
 }
 
 // JsArrayToGo handles conversion of JavaScript Array objects to Go types.
@@ -75,7 +174,7 @@ func JsBigIntToGo[T any](input *Value, samples ...T) (v T, err error) {
 	case big.Int:
 		temp = *bigInt
 	default:
-		return v, newInvalidGoTargetErr("*big.Int/big.Int", sample)
+		return v, newInvalidGoTypeErr("*big.Int/big.Int", sample)
 	}
 
 	return v, err
@@ -173,14 +272,14 @@ func mapEntryToGoWithContext(
 ) (k, v reflect.Value, err error) {
 	keySample := reflect.New(goKeyType).Elem().Interface()
 
-	goKeyFromJs, keyErr := jsValueToGo(ctx, jsKey, keySample)
+	goKeyFromJs, keyErr := toGoValue(ctx, jsKey, keySample)
 	if keyErr != nil {
 		return k, v, newJsToGoErr(jsKey, keyErr, "map key")
 	}
 
 	k = reflect.ValueOf(goKeyFromJs).Convert(goKeyType)
 	valueSample := reflect.New(goValueType).Elem().Interface()
-	goValFromJs, valErr := jsValueToGo(ctx, jsValue, valueSample)
+	goValFromJs, valErr := toGoValue(ctx, jsValue, valueSample)
 
 	switch {
 	case valErr != nil:
@@ -418,7 +517,7 @@ func setFieldWithDirectConversion(
 ) error {
 	fieldSample := reflect.New(fieldType).Elem().Interface()
 
-	converted, err := jsValueToGo(tracker, jsValue, fieldSample)
+	converted, err := toGoValue(tracker, jsValue, fieldSample)
 	if err != nil {
 		return newJsToGoErr(
 			jsValue, err,
@@ -580,7 +679,7 @@ func convertArgsToJS(
 	jsArgs := make([]*Value, 0, expectedArgsCount)
 
 	convertArg := func(argValue any, argIndex int) error {
-		jsArg, convErr := ToJSValue(ctx, argValue)
+		jsArg, convErr := ToJsValue(ctx, argValue)
 		if convErr != nil {
 			results[len(results)-1] = reflect.ValueOf(
 				fmt.Errorf(
@@ -645,7 +744,7 @@ func handleJsFunctionResult(
 		return results
 	}
 
-	goResult, err := jsValueToGo[any](tracker, jsResult)
+	goResult, err := toGoValue[any](tracker, jsResult)
 	if err != nil {
 		results[len(results)-1] = reflect.ValueOf(
 			fmt.Errorf("failed to convert JS function result '%s' to Go: %w", jsResult.Type(), err),
@@ -672,92 +771,6 @@ func handleJsFunctionResult(
 	}
 
 	return results
-}
-
-func JsValueToGo[T any](input *Value, samples ...T) (v T, err error) {
-	return jsValueToGo(NewTracker[uint64](), input, samples...)
-}
-
-func jsValueToGo[T any](
-	tracker *Tracker[uint64],
-	input *Value,
-	samples ...T,
-) (v T, err error) {
-	temp, sample := createTemp(samples...)
-	switch any(sample).(type) {
-	case *Value:
-		tvv, _ := any(input).(T)
-
-		return tvv, nil
-	case Value:
-		tv, _ := any(*input).(T)
-
-		return tv, nil
-	}
-
-	defer func() {
-		v, err = processTempValue("ToGoValue", temp, err, sample)
-	}()
-
-	// If JS value is a QJSProxyValue, extract the Go value from the registry
-	if input.IsQJSProxyValue() {
-		proxyID := input.GetPropertyStr("proxyId")
-		temp, _ = input.context.runtime.registry.Get(uint64(proxyID.Int64()))
-
-		return v, nil
-	}
-
-	var ok bool
-	if temp, ok, err = jsPrimitivesToGo(tracker, input, sample); ok {
-		return v, err
-	}
-
-	if input.IsGlobalInstanceOf("Date") {
-		temp, err = JsTimeToGo(input)
-
-		return v, err
-	}
-
-	if input.IsGlobalInstanceOf("RegExp") {
-		temp = input.String()
-
-		return v, err
-	}
-
-	if input.IsByteArray() {
-		temp, err = JsArrayBufferToGo(input)
-
-		return v, err
-	}
-
-	if IsTypedArray(input) {
-		temp, err = JsTypedArrayToGo(input)
-
-		return v, err
-	}
-
-	if input.IsMap() {
-		temp, err = jsObjectToGo(tracker, input, sample)
-
-		return v, err
-	}
-
-	if input.IsSet() {
-		temp, err = jsSetToGoWithContext(tracker, input, sample)
-
-		return v, err
-	}
-
-	if input.IsArray() {
-		temp, err = jsArrayToGoWithContext(tracker, input, sample)
-
-		return v, err
-	}
-
-	// Fallback for all other object types
-	temp, err = jsObjectToGo(tracker, input, sample)
-
-	return v, err
 }
 
 // jsPrimitivesToGo converts JavaScript primitive types to Go types.

@@ -43,7 +43,7 @@ func TestContextValueCreation(t *testing.T) {
 			fmt.Printf("context check: is nil=%t, value=%v\n", ctx == nil, ctx)
 			return num * 2
 		}
-		jsFuncWithContext := must(qjs.ToJSValue(ctx, goFuncWithContext))
+		jsFuncWithContext := must(qjs.ToJsValue(ctx, goFuncWithContext))
 		defer jsFuncWithContext.Free()
 		ctx.Global().SetPropertyStr("funcWithContext", jsFuncWithContext)
 

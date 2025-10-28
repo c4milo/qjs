@@ -369,7 +369,7 @@ func (ac *JsArrayToGoConverter[T]) convertToInterface(jsArray *Array, jsLen int6
 	for i := range jsLen {
 		jsElem := jsArray.Get(i)
 
-		goElem, convErr := jsValueToGo[any](ac.tracker, jsElem)
+		goElem, convErr := toGoValue[any](ac.tracker, jsElem)
 
 		if !jsElem.IsFunction() {
 			jsElem.Free()
@@ -398,7 +398,7 @@ func (ac *JsArrayToGoConverter[T]) convertToSlice(jsArray *Array, jsLen int64) (
 	for i := range jsLen {
 		jsElem := jsArray.Get(i)
 		elemSample := reflect.New(elemType).Elem().Interface()
-		goElem, convErr := jsValueToGo(ac.tracker, jsElem, elemSample)
+		goElem, convErr := toGoValue(ac.tracker, jsElem, elemSample)
 
 		if !jsElem.IsFunction() {
 			jsElem.Free()
@@ -433,7 +433,7 @@ func (ac *JsArrayToGoConverter[T]) convertToArray(jsArray *Array, jsLen int64) (
 	for i := range jsLen {
 		jsElem := jsArray.Get(i)
 		elemSample := reflect.New(elemType).Elem().Interface()
-		goElem, convErr := jsValueToGo(ac.tracker, jsElem, elemSample)
+		goElem, convErr := toGoValue(ac.tracker, jsElem, elemSample)
 
 		if !jsElem.IsFunction() {
 			jsElem.Free()
@@ -593,7 +593,7 @@ func processTempValue[T any](prefix string, temp any, err error, samples ...T) (
 			return tempT, nil
 		}
 
-		return v, newInvalidGoTargetErr(GetGoTypeName(sample), temp)
+		return v, newInvalidGoTypeErr(GetGoTypeName(sample), temp)
 	}
 
 	valueT, _ := temp.(T)
@@ -769,7 +769,7 @@ func isGoStruct(goType reflect.Type) bool {
 // VerifyGoFunc validates that a function signature is compatible with JS conversion.
 func VerifyGoFunc(fnType reflect.Type, sample any) error {
 	if fnType == nil || fnType.Kind() != reflect.Func {
-		return newInvalidGoTargetErr("function", sample)
+		return newInvalidGoTypeErr("function", sample)
 	}
 
 	// Validate that all return values are convertible to JS

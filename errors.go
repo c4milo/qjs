@@ -108,8 +108,8 @@ func newArgConversionErr(index int, err error) error {
 	return fmt.Errorf("cannot convert JS function argument at index %d: %w", index, err)
 }
 
-func newInvalidGoTargetErr(expect string, got any) error {
-	return fmt.Errorf("expected GO target %s, got %T", expect, got)
+func newInvalidGoTypeErr(expect string, got any) error {
+	return fmt.Errorf("expected GO type %s, got %T", expect, got)
 }
 
 func newInvalidJsInputErr(kind string, input *Value) (err error) {
