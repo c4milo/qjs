@@ -65,7 +65,7 @@ func TestJsBigIntToGo(t *testing.T) {
 	t.Run("unsupported_type", func(t *testing.T) {
 		val, err := qjs.JsBigIntToGo[int64](jsBigInt)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "expected GO target *big.Int/big.Int")
+		assert.Contains(t, err.Error(), "expected GO type *big.Int/big.Int")
 		assert.Equal(t, int64(0), val)
 	})
 }
@@ -1877,7 +1877,7 @@ func TestJsFuncToGo(t *testing.T) {
 			jsCode:    `(a, b) => a + b`,
 			sample:    "not a function",
 			expectErr: true,
-			errMsg:    "expected GO target function",
+			errMsg:    "expected GO type function",
 		},
 		{
 			name:     "function_with_single_return_value",
@@ -2236,6 +2236,41 @@ func TestJsFuncToGo(t *testing.T) {
 			assert.Empty(t, result)
 		})
 	})
+
+	// this test pass go function to js without calling it in js side
+	// then pass it back to go and call it in go side
+	// to verify the go function passthrough works correctly
+	// without any modification by js engine
+	t.Run("Passthrough_of_go_func", func(t *testing.T) {
+		rt := must(qjs.New())
+		defer rt.Close()
+
+		type TestArg struct {
+			TestFunc func(int) (int, error) `json:"testFunc"`
+		}
+
+		goArg := must(qjs.ToJsValue(rt.Context(), TestArg{
+			TestFunc: func(x int) (int, error) {
+				return x * x, nil
+			},
+		}))
+		rt.Context().Global().SetPropertyStr("goArg", goArg)
+		goReceiver := rt.Context().Function(func(ctx *qjs.This) (*qjs.Value, error) {
+			jsArg := ctx.Args()[0]
+			// expect wrong type
+			_, err := qjs.ToGoValue(jsArg, "")
+			assert.Error(t, err, "string is not a valid type, expected TestArg")
+
+			goArg := must(qjs.ToGoValue(jsArg, TestArg{}))
+			result := must(goArg.TestFunc(5))
+			assert.Equal(t, 25, result)
+			return nil, nil
+		})
+		rt.Context().Global().SetPropertyStr("goReceiver", goReceiver)
+		jsCode := `(function() { goReceiver(goArg); })();`
+		result := must(rt.Eval("test.js", qjs.Code(jsCode)))
+		defer result.Free()
+	})
 }
 
 func TestJsValueToGo(t *testing.T) {
@@ -2508,9 +2543,9 @@ func TestJsValueToGo(t *testing.T) {
 
 			var result any
 			if test.sample != nil {
-				result, err = qjs.JsValueToGo(jsValue, test.sample)
+				result, err = qjs.ToGoValue(jsValue, test.sample)
 			} else {
-				result, err = qjs.JsValueToGo[any](jsValue)
+				result, err = qjs.ToGoValue[any](jsValue)
 			}
 
 			if test.customAssert != nil {
@@ -2587,12 +2622,12 @@ func TestStringToBoolConversion(t *testing.T) {
 
 	result := must(rt.Eval("test.js", qjs.Code(`"non-empty"`)))
 	defer result.Free()
-	converted := must(qjs.JsValueToGo(result, boolVal))
+	converted := must(qjs.ToGoValue(result, boolVal))
 	assert.True(t, converted)
 
 	emptyResult := must(rt.Eval("test.js", qjs.Code(`""`)))
 	defer emptyResult.Free()
-	converted2 := must(qjs.JsValueToGo(emptyResult, boolVal))
+	converted2 := must(qjs.ToGoValue(emptyResult, boolVal))
 	assert.False(t, converted2)
 }
 
@@ -2607,7 +2642,7 @@ func TestErrorValueHandling(t *testing.T) {
 	defer errorValue.Free()
 
 	assert.True(t, errorValue.IsError())
-	converted := must(qjs.JsValueToGo[error](errorValue))
+	converted := must(qjs.ToGoValue[error](errorValue))
 	assert.Error(t, converted)
 	assert.Contains(t, converted.Error(), "not a constructor")
 }
@@ -2620,13 +2655,13 @@ func TestStringToNumericConversion(t *testing.T) {
 		result := must(rt.Eval("test.js", qjs.Code(`"42"`)))
 		defer result.Free()
 		var ptrInt *int
-		converted := must(qjs.JsValueToGo(result, ptrInt))
+		converted := must(qjs.ToGoValue(result, ptrInt))
 		assert.Equal(t, 42, *converted)
 
 		floatResult := must(rt.Eval("test.js", qjs.Code(`"3.14"`)))
 		defer floatResult.Free()
 		var ptrFloat *float64
-		converted2 := must(qjs.JsValueToGo(floatResult, ptrFloat))
+		converted2 := must(qjs.ToGoValue(floatResult, ptrFloat))
 		assert.Equal(t, 3.14, *converted2)
 	})
 
@@ -2635,7 +2670,7 @@ func TestStringToNumericConversion(t *testing.T) {
 		defer result.Free()
 
 		var intVal int
-		_, err := qjs.JsValueToGo(result, intVal)
+		_, err := qjs.ToGoValue(result, intVal)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "empty string cannot be converted to number")
 	})
@@ -2681,7 +2716,7 @@ func TestStringToNumericConversion(t *testing.T) {
 				result := must(rt.Eval("test.js", qjs.Code(tc.jsValue)))
 				defer result.Free()
 
-				converted, err := qjs.JsValueToGo(result, tc.targetType)
+				converted, err := qjs.ToGoValue(result, tc.targetType)
 				require.NoError(t, err)
 				assert.Equal(t, tc.expected, converted)
 			})

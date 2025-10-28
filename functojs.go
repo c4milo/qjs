@@ -30,7 +30,7 @@ func FuncToJS(c *Context, v any) (_ *Value, err error) {
 	}
 
 	if rtype.Kind() != reflect.Func {
-		return nil, newInvalidGoTargetErr("function", v)
+		return nil, newInvalidGoTypeErr("function", v)
 	}
 
 	if rval.IsNil() {
@@ -114,7 +114,7 @@ func handlePointerArgument(jsArg *Value, argType reflect.Type) (reflect.Value, e
 	underlyingType := argType.Elem()
 	zeroVal := reflect.New(underlyingType).Elem()
 
-	goVal, err := JsValueToGo(jsArg, zeroVal.Interface())
+	goVal, err := ToGoValue(jsArg, zeroVal.Interface())
 	if err != nil {
 		return reflect.Value{}, newJsToGoErr(jsArg, err, "function param pointer to "+jsArg.Type())
 	}
@@ -184,7 +184,7 @@ func JsArgToGo(jsArg *Value, argType reflect.Type) (reflect.Value, error) {
 
 	goZeroVal := CreateNonNilSample(argType)
 
-	goVal, err := JsValueToGo(jsArg, goZeroVal)
+	goVal, err := ToGoValue(jsArg, goZeroVal)
 	if err != nil {
 		return reflect.Value{}, newJsToGoErr(jsArg, err, "function param "+jsArg.Type())
 	}
@@ -241,7 +241,7 @@ func GoFuncResultToJs(c *Context, results []reflect.Value) (*Value, error) {
 
 		// Single remaining value -> return that value
 		if len(remaining) == 1 {
-			return ToJSValue(c, remaining[0].Interface())
+			return ToJsValue(c, remaining[0].Interface())
 		}
 
 		// Multiple remaining values -> return as JS array
@@ -250,12 +250,12 @@ func GoFuncResultToJs(c *Context, results []reflect.Value) (*Value, error) {
 			jsValues[i] = result.Interface()
 		}
 
-		return ToJSValue(c, jsValues)
+		return ToJsValue(c, jsValues)
 	}
 
 	// Single return value -> return that value
 	if len(results) == 1 {
-		return ToJSValue(c, results[0].Interface())
+		return ToJsValue(c, results[0].Interface())
 	}
 
 	// Multiple return values -> return as JS array
@@ -264,5 +264,5 @@ func GoFuncResultToJs(c *Context, results []reflect.Value) (*Value, error) {
 		jsValues[i] = result.Interface()
 	}
 
-	return ToJSValue(c, jsValues)
+	return ToJsValue(c, jsValues)
 }

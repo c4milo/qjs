@@ -39,7 +39,7 @@ func testConcurrentRuntimeExecution(t *testing.T, threadID int) {
 		Name:     threadName,
 	}
 
-	jsValue, err := qjs.ToJSValue(rt.Context(), data)
+	jsValue, err := qjs.ToJsValue(rt.Context(), data)
 	assert.NoError(t, err)
 	if jsValue != nil {
 		assert.True(t, jsValue.IsObject())
@@ -84,7 +84,7 @@ func testPooledRuntimeExecution(t *testing.T, pool *qjs.Pool, workerID int) {
 		"processed": true,
 	}
 
-	jsValue, err := qjs.ToJSValue(rt.Context(), testData)
+	jsValue, err := qjs.ToJsValue(rt.Context(), testData)
 	require.NoError(t, err)
 	defer jsValue.Free()
 

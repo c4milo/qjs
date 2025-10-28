@@ -325,7 +325,7 @@ func (v *Value) DeleteProperty(name string) bool {
 func (v *Value) Invoke(fname string, args ...any) (_ *Value, err error) {
 	jsArgs := make([]*Value, len(args))
 	for i, arg := range args {
-		if jsArgs[i], err = ToJSValue(v.context, arg); err != nil {
+		if jsArgs[i], err = ToJsValue(v.context, arg); err != nil {
 			return nil, err
 		}
 		defer jsArgs[i].Free()

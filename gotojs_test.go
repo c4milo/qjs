@@ -164,7 +164,7 @@ func createNestedStructure(depth int) any {
 }
 
 func testValueConversion(t *testing.T, ctx *qjs.Context, input any, validator func(*qjs.Value)) {
-	result, err := qjs.ToJSValue(ctx, input)
+	result, err := qjs.ToJsValue(ctx, input)
 	require.NoError(t, err, "ToJSValue should not return error for input %T: %v", input, input)
 	require.NotNil(t, result, "ToJSValue should not return nil for input %T: %v", input, input)
 	defer result.Free()
@@ -172,7 +172,7 @@ func testValueConversion(t *testing.T, ctx *qjs.Context, input any, validator fu
 }
 
 func testErrorCase(t *testing.T, ctx *qjs.Context, input any, expectedErrorSubstring string) {
-	result, err := qjs.ToJSValue(ctx, input)
+	result, err := qjs.ToJsValue(ctx, input)
 	if result != nil {
 		result.Free()
 	}
@@ -245,7 +245,7 @@ func TestJSValueConversion(t *testing.T) {
 			}
 
 			t.Run("ByteRuneComplexTypes", func(t *testing.T) {
-				jsValue, err := qjs.ToJSValue(runtime.Context(), []byte("hello world"))
+				jsValue, err := qjs.ToJsValue(runtime.Context(), []byte("hello world"))
 				require.NoError(t, err)
 				defer jsValue.Free()
 
@@ -265,7 +265,7 @@ func TestJSValueConversion(t *testing.T) {
 			})
 
 			t.Run("Uintptr", func(t *testing.T) {
-				val := qjs.GoNumberToJS[uintptr](ctx, 42)
+				val := qjs.GoNumberToJs[uintptr](ctx, 42)
 				assert.True(t, val.IsNumber(), "Uintptr should be converted to number")
 				retrieved := val.Int64()
 				assert.Equal(t, int64(42), retrieved, "Uintptr value should match")
@@ -284,7 +284,7 @@ func TestJSValueConversion(t *testing.T) {
 			})
 
 			t.Run("MaxUint64", func(t *testing.T) {
-				val := qjs.GoNumberToJS[uint64](ctx, math.MaxUint64)
+				val := qjs.GoNumberToJs[uint64](ctx, math.MaxUint64)
 				assert.True(t, val.IsBigInt())
 				retrieved := val.BigInt().Uint64()
 				var expected uint64 = math.MaxUint64
@@ -958,7 +958,7 @@ func TestJSValueConversion(t *testing.T) {
 		rtype := reflect.TypeOf(s)
 		rval := reflect.ValueOf(s)
 
-		result, err := qjs.StructToJSObjectValue(ctx, rtype, rval)
+		result, err := qjs.GoStructToJs(ctx, rtype, rval)
 		require.NoError(t, err)
 		defer result.Free()
 
@@ -969,7 +969,7 @@ func TestJSValueConversion(t *testing.T) {
 		slice := []int{1, 2, 3}
 		rval := reflect.ValueOf(slice)
 
-		result, err := qjs.SliceToArrayValue(ctx, rval)
+		result, err := qjs.GoSliceToJs(ctx, rval)
 		require.NoError(t, err)
 		defer result.Free()
 
@@ -980,7 +980,7 @@ func TestJSValueConversion(t *testing.T) {
 		m := map[string]int{"key": 42}
 		rval := reflect.ValueOf(m)
 
-		result, err := qjs.MapToObjectValue(ctx, rval)
+		result, err := qjs.GoMapToJs(ctx, rval)
 		require.NoError(t, err)
 		defer result.Free()
 
@@ -1123,7 +1123,7 @@ func TestToJSValue_ErrorHandling(t *testing.T) {
 		const maxDepth = 10
 		root := createNestedStructure(maxDepth)
 
-		jsValue, err := qjs.ToJSValue(runtime.Context(), root)
+		jsValue, err := qjs.ToJsValue(runtime.Context(), root)
 		require.NoError(t, err)
 		defer jsValue.Free()
 		assert.True(t, jsValue.IsObject())
