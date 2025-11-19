@@ -10,6 +10,7 @@ import (
 
 	"github.com/tetratelabs/wazero"
 	"github.com/tetratelabs/wazero/api"
+	"github.com/tetratelabs/wazero/sys"
 	wsp1 "github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 )
 
@@ -317,6 +318,18 @@ func (r *Runtime) call(name string, args ...uint64) uint64 {
 
 	results, err := fn.Call(r.context, args...)
 	if err != nil {
+		// Handle context cancellation/timeout gracefully via sys.ExitError
+		// This is the proper way to detect when wazero's CloseOnContextDone
+		// terminates execution due to context cancellation or timeout.
+		// See: https://pkg.go.dev/github.com/tetratelabs/wazero/sys#ExitError
+		var exitErr *sys.ExitError
+		if errors.As(err, &exitErr) {
+			// Context was cancelled or timed out - this is expected behavior
+			// Return a clean error instead of panicking
+			panic(fmt.Errorf("execution interrupted (context done): %w", err))
+		}
+
+		// For other errors, panic with full context
 		stack := debug.Stack()
 		panic(fmt.Errorf("failed to call %s: %w\nstack: %s", name, err, stack))
 	}
