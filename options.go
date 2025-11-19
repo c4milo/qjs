@@ -47,6 +47,17 @@ type Option struct {
 	ProxyFunction      any
 	Stdout             io.Writer
 	Stderr             io.Writer
+
+	// Security/Sandboxing options (GitHub issue #31)
+	// DisableFilesystem prevents JavaScript code from accessing the filesystem via WASI.
+	// When enabled, WithDirMount and WithFSConfig are not configured.
+	// Use this for sandboxed environments where filesystem access should be blocked.
+	DisableFilesystem bool
+
+	// DisableSystemTime prevents JavaScript code from accessing real system time.
+	// When enabled, WithSysWalltime, WithSysNanotime, and WithSysNanosleep are not configured.
+	// This makes Date.now() return 0 and provides deterministic time for sandboxed environments.
+	DisableSystemTime bool
 }
 
 // EvalOption configures JavaScript evaluation behavior in QuickJS context.

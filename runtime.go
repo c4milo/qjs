@@ -133,20 +133,30 @@ func New(options ...Option) (runtime *Runtime, err error) {
 		return nil, fmt.Errorf("failed to setup host module: %w", err)
 	}
 
-	fsConfig := wazero.
-		NewFSConfig().
-		WithDirMount(runtime.option.CWD, "/")
+	// Build module config with optional WASI APIs based on security options
+	moduleConfig := wazero.NewModuleConfig().
+		WithStartFunctions(option.StartFunctionName).
+		WithStdout(option.Stdout).
+		WithStderr(option.Stderr)
+
+	// Conditionally enable filesystem access (GitHub issue #31)
+	if !option.DisableFilesystem {
+		fsConfig := wazero.NewFSConfig().WithDirMount(runtime.option.CWD, "/")
+		moduleConfig = moduleConfig.WithFSConfig(fsConfig)
+	}
+
+	// Conditionally enable system time APIs (GitHub issue #31)
+	if !option.DisableSystemTime {
+		moduleConfig = moduleConfig.
+			WithSysWalltime().
+			WithSysNanotime().
+			WithSysNanosleep()
+	}
+
 	if runtime.module, err = runtime.wrt.InstantiateModule(
 		option.Context,
 		compiledQJSModule,
-		wazero.NewModuleConfig().
-			WithStartFunctions(option.StartFunctionName).
-			WithSysWalltime().
-			WithSysNanotime().
-			WithSysNanosleep().
-			WithFSConfig(fsConfig).
-			WithStdout(option.Stdout).
-			WithStderr(option.Stderr),
+		moduleConfig,
 	); err != nil {
 		return nil, fmt.Errorf("failed to instantiate module: %w", err)
 	}
