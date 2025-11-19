@@ -7,7 +7,7 @@ build:
 		cmake -B build \
 				-DQJS_BUILD_LIBC=ON \
 				-DQJS_BUILD_CLI_WITH_MIMALLOC=OFF \
-				-DCMAKE_TOOLCHAIN_FILE=/opt/wasi-sdk/share/cmake/wasi-sdk.cmake \
+				-DCMAKE_TOOLCHAIN_FILE=/tmp/wasi-sdk-24.0-arm64-macos/share/cmake/wasi-sdk.cmake \
 				-DCMAKE_PROJECT_INCLUDE=../qjswasm.cmake
 		@echo "Building qjs target..."
 		make -C qjswasm/quickjs/build qjswasm -j$(nproc)

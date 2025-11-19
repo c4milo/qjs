@@ -36,8 +36,16 @@ QJSRuntime *New_QJS(
   if (gc_threshold > 0)
     JS_SetGCThreshold(runtime, gc_threshold);
 
-  if (max_stack_size > 0)
-    JS_SetMaxStackSize(runtime, max_stack_size);
+  // WASM FIX: MaxStackSize causes "out of bounds memory access" panic in WASM
+  // QuickJS uses native stack pointers which don't work in WASM linear memory
+  // Commenting out to prevent crashes - use timeout handler instead
+  // if (max_stack_size > 0)
+  //   JS_SetMaxStackSize(runtime, max_stack_size);
+
+  // Set up execution timeout handler (uses JS_SetInterruptHandler internally)
+  // max_execution_time is in milliseconds
+  if (max_execution_time > 0)
+    SetExecuteTimeout(runtime, (uint64_t)max_execution_time);
 
   /* setup the the worker context */
   js_std_set_worker_new_context_func(New_QJSContext);
