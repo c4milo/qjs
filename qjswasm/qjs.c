@@ -36,11 +36,12 @@ QJSRuntime *New_QJS(
   if (gc_threshold > 0)
     JS_SetGCThreshold(runtime, gc_threshold);
 
-  // WASM FIX: MaxStackSize causes "out of bounds memory access" panic in WASM
-  // QuickJS uses native stack pointers which don't work in WASM linear memory
-  // Commenting out to prevent crashes - use timeout handler instead
-  // if (max_stack_size > 0)
-  //   JS_SetMaxStackSize(runtime, max_stack_size);
+  // WASM STACK OVERFLOW FIX: Now safe to use with js_check_stack_overflow_wasm()
+  // Uses frame-depth counting instead of C stack pointers (see WASM_STACK_OVERFLOW.md)
+  // JS_SetMaxStackSize() just sets rt->stack_size, which js_check_stack_overflow_wasm() reads
+  // to determine max recursion depth via frame count (not C stack checking)
+  if (max_stack_size > 0)
+    JS_SetMaxStackSize(runtime, max_stack_size);
 
   // Set up execution timeout handler (uses JS_SetInterruptHandler internally)
   // max_execution_time is in milliseconds

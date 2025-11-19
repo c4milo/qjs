@@ -5,7 +5,7 @@ import (
 	"testing"
 	"unsafe"
 
-	"github.com/c4milo/qjs"
+	"github.com/fastschema/qjs"
 	"github.com/stretchr/testify/assert"
 )
 

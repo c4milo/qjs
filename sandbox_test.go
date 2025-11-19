@@ -173,12 +173,12 @@ func TestSandbox_FullLockdown(t *testing.T) {
 }
 
 // TestSandbox_Issue31_FileSystemAccess is a regression test for
-// https://github.com/c4milo/qjs/issues/31
+// https://github.com/fastschema/qjs/issues/31
 func TestSandbox_Issue31_FileSystemAccess(t *testing.T) {
 	t.Parallel()
 
 	t.Log("Testing GitHub Issue #31: Add options to disable filesystem/WASI APIs")
-	t.Log("Issue: https://github.com/c4milo/qjs/issues/31")
+	t.Log("Issue: https://github.com/fastschema/qjs/issues/31")
 
 	// Part 1: Verify filesystem is accessible by default
 	t.Run("Default_FilesystemEnabled", func(t *testing.T) {
@@ -243,5 +243,5 @@ func TestSandbox_Issue31_FileSystemAccess(t *testing.T) {
 
 	t.Log("Summary: Issue #31 has been FIXED!")
 	t.Log("DisableFilesystem and DisableSystemTime options now available")
-	t.Log("See: https://github.com/c4milo/qjs/issues/31")
+	t.Log("See: https://github.com/fastschema/qjs/issues/31")
 }
