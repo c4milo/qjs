@@ -18,10 +18,10 @@ import (
 var wasmBytes []byte
 
 var (
-	compiledQJSModule   wazero.CompiledModule
-	cachedRuntimeConfig wazero.RuntimeConfig
-	cachedBytesHash     uint64
-	compilationMutex    sync.Mutex
+	compiledQJSModule wazero.CompiledModule
+	compilationCache  wazero.CompilationCache // Shared cache for performance
+	cachedBytesHash   uint64
+	compilationMutex  sync.Mutex
 )
 
 // Runtime wraps a QuickJS WebAssembly runtime with memory management.
@@ -60,18 +60,21 @@ func createGlobalCompiledModule(
 
 	// Check if we need to compile or recompile
 	if compiledQJSModule == nil || cachedBytesHash != currentHash || disableBuildCache {
-		var cache wazero.CompilationCache
-		if cacheDir == "" {
-			cache = wazero.NewCompilationCache()
-		} else if cache, err = wazero.NewCompilationCacheWithDir(cacheDir); err != nil {
-			return fmt.Errorf("failed to create compilation cache with dir %s: %w", cacheDir, err)
+		// Create or reuse compilation cache (expensive, so we cache it globally)
+		if compilationCache == nil {
+			if cacheDir == "" {
+				compilationCache = wazero.NewCompilationCache()
+			} else if compilationCache, err = wazero.NewCompilationCacheWithDir(cacheDir); err != nil {
+				return fmt.Errorf("failed to create compilation cache with dir %s: %w", cacheDir, err)
+			}
 		}
 
-		cachedRuntimeConfig = wazero.
+		// Create temporary RuntimeConfig for compilation (not cached)
+		runtimeConfig := wazero.
 			NewRuntimeConfig().
-			WithCompilationCache(cache).
+			WithCompilationCache(compilationCache).
 			WithCloseOnContextDone(closeOnContextDone)
-		wrt := wazero.NewRuntimeWithConfig(ctx, cachedRuntimeConfig)
+		wrt := wazero.NewRuntimeWithConfig(ctx, runtimeConfig)
 
 		if compiledQJSModule, err = wrt.CompileModule(ctx, qjsBytes); err != nil {
 			return fmt.Errorf("failed to compile qjs module: %w", err)
@@ -116,10 +119,28 @@ func New(options ...Option) (runtime *Runtime, err error) {
 		registry: proxyRegistry,
 	}
 
-	runtime.wrt = wazero.NewRuntimeWithConfig(
-		option.Context,
-		cachedRuntimeConfig,
-	)
+	// Create per-instance RuntimeConfig with shared compilation cache
+	// This allows per-instance memory limits while keeping compilation fast
+	runtimeConfig := wazero.
+		NewRuntimeConfig().
+		WithCompilationCache(compilationCache). // Shared cache (fast)
+		WithCloseOnContextDone(option.CloseOnContextDone)
+
+	// Apply per-instance memory limit if specified
+	// Convert MemoryLimit (bytes) to wazero pages (1 page = 64KB = 65536 bytes)
+	// Rounds UP to ensure user gets at least requested memory.
+	// For exact limits, ensure MemoryLimit is a multiple of 65536 (64KB page size).
+	// Example: 268435456 bytes (256MB) → 4096 pages (exact)
+	// Example: 268435457 bytes (256MB + 1 byte) → 4097 pages (~256.015625MB)
+	if option.MemoryLimit > 0 {
+		// Round up: (bytes + pageSize - 1) / pageSize
+		memoryPages := uint32((option.MemoryLimit + 65535) / 65536)
+		if memoryPages > 0 {
+			runtimeConfig = runtimeConfig.WithMemoryLimitPages(memoryPages)
+		}
+	}
+
+	runtime.wrt = wazero.NewRuntimeWithConfig(option.Context, runtimeConfig)
 
 	if _, err := wsp1.Instantiate(option.Context, runtime.wrt); err != nil {
 		return nil, fmt.Errorf("failed to instantiate WASI: %w", err)

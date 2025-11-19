@@ -39,7 +39,16 @@ type Option struct {
 	CloseOnContextDone bool
 	DisableBuildCache  bool
 	CacheDir           string
-	MemoryLimit        int
+
+	// MemoryLimit sets the maximum WASM memory in bytes.
+	// Applied at WASM level via wazero.WithMemoryLimitPages() to prevent hangs on large allocations.
+	// Internally converted to pages (1 page = 64KB = 65536 bytes), rounding UP to ensure
+	// you get at least the requested amount. For exact limits, use multiples of 65536.
+	// Example: 268435456 bytes (256MB exactly) → 4096 pages
+	// Example: 268435457 bytes (256MB + 1 byte) → 4097 pages (~256.015625MB)
+	// Set to 0 for no limit (not recommended for untrusted code).
+	MemoryLimit int
+
 	MaxStackSize       int
 	MaxExecutionTime   int
 	GCThreshold        int
