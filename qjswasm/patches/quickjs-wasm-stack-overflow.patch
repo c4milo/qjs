@@ -33,11 +33,11 @@ index e0b38c7..b499f19 100644
 +}
 +
 +static inline bool js_check_stack_overflow_wasm(JSRuntime *rt, size_t alloca_size) {
-+    /* Default max depth is 1000 frames (provides ~2ms stack overflow detection)
++    /* Default max depth is 256 frames (safe for WASM with limited initial memory)
 +     * This is used even when stack_size is 0 (no explicit limit set).
 +     * Much lower than MAX_SAFETY_DEPTH (100000) to prevent deep recursion issues.
 +     */
-+    int max_depth = 1000;
++    int max_depth = 256;
 +
 +    /* Get current call depth by traversing stack frames */
 +    int depth = js_get_call_depth(rt);

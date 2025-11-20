@@ -37,7 +37,7 @@ QJSRuntime *New_QJS(
     JS_SetGCThreshold(runtime, gc_threshold);
 
   // WASM STACK OVERFLOW FIX: Now safe to use with js_check_stack_overflow_wasm()
-  // Uses frame-depth counting instead of C stack pointers (see WASM_STACK_OVERFLOW.md)
+  // Uses frame-depth counting instead of C stack pointers
   // JS_SetMaxStackSize() just sets rt->stack_size, which js_check_stack_overflow_wasm() reads
   // to determine max recursion depth via frame count (not C stack checking)
   if (max_stack_size > 0)

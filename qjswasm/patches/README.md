@@ -34,8 +34,6 @@ This directory contains patches that are automatically applied to the QuickJS su
 
 **Result**: MaxStackSize option now works correctly for all valid values
 
-**Related documentation**: See `/WASM_STACK_OVERFLOW.md` for full details
-
 ## Adding New Patches
 
 To add a new patch:
