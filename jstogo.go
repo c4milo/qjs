@@ -554,7 +554,7 @@ func jsObjectToGo[T any](
 
 	targetType := reflect.TypeOf(sample)
 	if targetType == nil {
-		targetType = reflect.TypeOf(map[string]any{})
+		targetType = reflect.TypeFor[map[string]any]()
 	}
 
 	if targetType.Kind() == reflect.Map {

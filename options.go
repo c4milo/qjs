@@ -49,13 +49,13 @@ type Option struct {
 	// Set to 0 for no limit (not recommended for untrusted code).
 	MemoryLimit int
 
-	MaxStackSize       int
-	MaxExecutionTime   int
-	GCThreshold        int
-	QuickJSWasmBytes   []byte
-	ProxyFunction      any
-	Stdout             io.Writer
-	Stderr             io.Writer
+	MaxStackSize     int
+	MaxExecutionTime int
+	GCThreshold      int
+	QuickJSWasmBytes []byte
+	ProxyFunction    any
+	Stdout           io.Writer
+	Stderr           io.Writer
 
 	// Security/Sandboxing options (GitHub issue #31)
 	// DisableFilesystem prevents JavaScript code from accessing the filesystem via WASI.

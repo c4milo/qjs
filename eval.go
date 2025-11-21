@@ -27,8 +27,8 @@ func eval(c *Context, file string, flags ...EvalOptionFunc) (value *Value, err e
 		if r := recover(); r != nil {
 			value = nil
 			// Check if context was cancelled
-			if c.Context != nil && c.Context.Err() != nil {
-				err = fmt.Errorf("execution interrupted (context cancelled): %w", c.Context.Err())
+			if c.Context != nil && c.Err() != nil {
+				err = fmt.Errorf("execution interrupted (context cancelled): %w", c.Err())
 			} else {
 				err = fmt.Errorf("execution interrupted (WASM panic): %v", r)
 			}

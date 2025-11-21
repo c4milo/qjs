@@ -206,15 +206,9 @@ func CreateVariadicSlice(jsArgs []*Value, sliceType reflect.Type, fixedArgsCount
 		}
 
 		// Handle JavaScript null/undefined which result in invalid reflect.Value
-		// For interface{} / any types, set nil. For other types, use zero value.
+		// Set zero value for both interface{}/any and concrete types
 		if !goVal.IsValid() {
-			if varArgType.Kind() == reflect.Interface {
-				// For interface{}/any, use nil
-				variadicSlice.Index(i).Set(reflect.Zero(varArgType))
-			} else {
-				// For concrete types, use zero value (e.g., 0 for int, "" for string, etc.)
-				variadicSlice.Index(i).Set(reflect.Zero(varArgType))
-			}
+			variadicSlice.Index(i).Set(reflect.Zero(varArgType))
 		} else {
 			variadicSlice.Index(i).Set(goVal)
 		}
